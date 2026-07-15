@@ -83,7 +83,7 @@
   .rank-name { font-size: 12px; width: 108px; flex-shrink: 0; color: #EAF1F8; }
   .rank-bar-wrap { flex: 1; height: 10px; border-radius: 5px; background: #1B2C42; overflow: hidden; }
   .rank-bar { height: 100%; background: #4CC3F0; border-radius: 5px; }
-  .rank-count { font-size: 11px; width: 44px; text-align: right; flex-shrink: 0; color: #8CA0B8; font-family: ui-monospace, monospace; }
+  .rank-count { font-size: 11px; width: 64px; text-align: right; flex-shrink: 0; color: #8CA0B8; font-family: ui-monospace, monospace; } .rank-count-cap { display: block; font-size: 9px; color: #5C7086; font-weight: 400; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif; }
 
   .recent-title { font-size: 12px; margin-bottom: 8px; color: #5C7086; }
   .recent-list { display: flex; flex-direction: column; gap: 8px; }
@@ -975,7 +975,8 @@ function renderAthleteDashboard() {
     var pct = Math.round((t.count / maxCount) * 100);
     var trate = isWater && t.count > 0 ? Math.round((t.success / t.count) * 100) : null;
     var countLabel = isWater ? (t.success + "/" + t.count + "本") : (t.count + "本");
-    return '<div class="rank-item"><span class="rank-name">' + escHtml(t.name) + '</span><div class="rank-bar-wrap"><div class="rank-bar" style="width:' + pct + '%"></div></div><span class="rank-count">' + countLabel + (trate !== null ? " ・ " + trate + "%" : "") + "</span></div>";
+    var countCap = isWater ? '<span class="rank-count-cap">成功/本数</span>' : "";
+    return '<div class="rank-item"><span class="rank-name">' + escHtml(t.name) + '</span><div class="rank-bar-wrap"><div class="rank-bar" style="width:' + pct + '%"></div></div><span class="rank-count">' + countCap + countLabel + (trate !== null ? " ・ " + trate + "%" : "") + "</span></div>";
   }).join("");
 
   var recentHtml = entries.slice().reverse().slice(0, 6).map(function (e) {
@@ -1146,7 +1147,8 @@ function renderTeamTrickRanking() {
   var body = rows.map(function (r) {
     var pct = Math.round((r.count / maxCount) * 100);
     var countLabel = isWater ? (r.success + "/" + r.count + "本") : (r.count + "本");
-    return '<div class="rank-item"><span class="rank-name">' + escHtml(r.name) + '</span><div class="rank-bar-wrap"><div class="rank-bar" style="width:' + pct + '%"></div></div><span class="rank-count">' + countLabel + (r.rate !== null ? " ・ " + r.rate + "%" : "") + "</span></div>";
+    var countCap = isWater ? '<span class="rank-count-cap">成功/本数</span>' : "";
+    return '<div class="rank-item"><span class="rank-name">' + escHtml(r.name) + '</span><div class="rank-bar-wrap"><div class="rank-bar" style="width:' + pct + '%"></div></div><span class="rank-count">' + countCap + countLabel + (r.rate !== null ? " ・ " + r.rate + "%" : "") + "</span></div>";
   }).join("");
   return (
     '<div class="card raised" style="margin-bottom:4px;"><div class="recent-title" style="margin-bottom:10px;">技別(' + (isWater ? "ウォータージャンプ" : "トランポリン") + ")</div>" + select +
