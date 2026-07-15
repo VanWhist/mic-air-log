@@ -783,6 +783,93 @@ function renderChartHtml(id, data, series, height) {
   pendingCharts.push({ id: id, data: data, series: series, geom: geom });
   return '<div class="chart-wrap" id="' + id + '">' + svg + '<div class="chart-tooltip" style="display:none;"></div></div>';
 }
+function renderTrendChartHtml(id, data, height) {
+  var width = 400;
+  var m = { top: 18, bottom: 20, left: 28, right: 30 };
+  var plotW = width - m.left - m.right;
+  var plotH = height - m.top - m.bottom;
+  var n = data.length;
+  var counts = data.map(function (d) { return d.total; });
+  var maxCount = counts.length ? Math.max.apply(null, counts) : 0;
+  if (maxCount <= 0) maxCount = 1;
+  function xAt(i) { return n <= 1 ? m.left + plotW / 2 : m.left + (i / (n - 1)) * plotW; }
+  function yCount(v) { return m.top + plotH - (v / maxCount) * plotH; }
+  function yPct(v) { return m.top + plotH - (v / 100) * plotH; }
+  var slotW = plotW / Math.max(n, 1);
+  var barW = Math.max(10, Math.min(26, slotW * 0.5));
+  var r = Math.max(9, Math.min(13, height * 0.09));
+  var hasRate = data.some(function (d) { return d.rate !== null && d.rate !== undefined && !Number.isNaN(d.rate); });
+
+  var svg = '<svg viewBox="0 0 ' + width + " " + height + '" width="100%" height="' + height + '" preserveAspectRatio="none" style="display:block;overflow:visible;">';
+  svg += '<line x1="' + m.left + '" y1="' + (m.top + plotH) + '" x2="' + (m.left + plotW) + '" y2="' + (m.top + plotH) + '" stroke="#26374E" stroke-width="1"/>';
+
+  /* axis tick labels: left = 本数(count), right = 成功率(%) */
+  svg += '<text x="' + (m.left - 4) + '" y="' + (m.top + 3) + '" text-anchor="end" font-size="9" fill="' + COLORS.textFaint + '">' + maxCount + "</text>";
+  svg += '<text x="' + (m.left - 4) + '" y="' + (m.top + plotH + 3) + '" text-anchor="end" font-size="9" fill="' + COLORS.textFaint + '">0</text>';
+  if (hasRate) {
+    svg += '<text x="' + (m.left + plotW + 4) + '" y="' + (m.top + 3) + '" text-anchor="start" font-size="9" fill="' + COLORS.textFaint + '">100%</text>';
+    svg += '<text x="' + (m.left + plotW + 4) + '" y="' + (m.top + plotH + 3) + '" text-anchor="start" font-size="9" fill="' + COLORS.textFaint + '">0%</text>';
+  }
+
+  /* date labels: first / mid / last */
+  var mid = Math.floor((n - 1) / 2);
+  data.forEach(function (pt, i) {
+    if (i !== 0 && i !== mid && i !== n - 1) return;
+    svg += '<text x="' + xAt(i) + '" y="' + (height - 5) + '" text-anchor="middle" font-size="9" fill="' + COLORS.textFaint + '">' + escHtml(String(pt.date).slice(5)) + "</text>";
+  });
+
+  /* total bars (ice, left axis) + count labels */
+  var barsHtml = "", countLabelsHtml = "";
+  data.forEach(function (pt, i) {
+    var v = pt.total;
+    if (v === null || v === undefined || Number.isNaN(v)) return;
+    var x = xAt(i) - barW / 2, yTop = yCount(v), h = (m.top + plotH) - yTop;
+    barsHtml += '<rect x="' + x.toFixed(1) + '" y="' + yTop.toFixed(1) + '" width="' + barW.toFixed(1) + '" height="' + Math.max(h, 0).toFixed(1) + '" rx="3"/>';
+    var labelInside = h >= 16;
+    var ly = labelInside ? (yTop + h / 2) : (yTop - 6);
+    countLabelsHtml += '<text x="' + xAt(i).toFixed(1) + '" y="' + ly.toFixed(1) + '" text-anchor="middle" dominant-baseline="central" font-size="10.5" font-weight="700" fill="' + (labelInside ? "#EAF1F8" : COLORS.textFaint) + '">' + v + "</text>";
+  });
+  svg += '<g fill="' + COLORS.ice + '" opacity="0.55">' + barsHtml + "</g>" + countLabelsHtml;
+
+  /* success-rate dashed line + circles (amber, right axis) */
+  var linePts = "", started = false;
+  data.forEach(function (pt, i) {
+    var v = pt.rate;
+    if (v === null || v === undefined || Number.isNaN(v)) { started = false; return; }
+    var x = xAt(i), y = yPct(v);
+    linePts += (started ? "L" : "M") + x.toFixed(1) + "," + y.toFixed(1) + " ";
+    started = true;
+  });
+  if (linePts) svg += '<path d="' + linePts.trim() + '" fill="none" stroke="' + COLORS.amber + '" stroke-width="2" stroke-dasharray="5,4" stroke-linecap="round" stroke-linejoin="round"/>';
+  data.forEach(function (pt, i) {
+    var v = pt.rate;
+    if (v === null || v === undefined || Number.isNaN(v)) return;
+    var x = xAt(i), y = yPct(v);
+    svg += '<circle cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="' + r.toFixed(1) + '" fill="' + COLORS.amber + '" stroke="#0B1420" stroke-width="2"/>';
+    svg += '<text x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" text-anchor="middle" dominant-baseline="central" font-size="9.5" font-weight="700" fill="#23140A">' + v + "%</text>";
+  });
+
+  /* hover hit areas */
+  data.forEach(function (pt, i) {
+    svg += '<rect class="hit" data-idx="' + i + '" x="' + (xAt(i) - slotW / 2).toFixed(1) + '" y="' + m.top + '" width="' + slotW.toFixed(1) + '" height="' + plotH + '" fill="transparent"/>';
+  });
+  svg += "</svg>";
+
+  var legend =
+    '<div class="legend-row">' +
+    '<div style="display:flex;align-items:center;gap:5px;"><span style="width:14px;height:10px;border-radius:2px;display:inline-block;background:' + COLORS.ice + ';opacity:.55;"></span>総本数' + (hasRate ? "(左軸・バー内が本数)" : "(バー内が本数)") + "</div>" +
+    (hasRate ? '<div style="display:flex;align-items:center;gap:5px;"><span style="width:14px;height:0;display:inline-block;border-top:2.5px dashed ' + COLORS.amber + ';"></span>成功率(右軸・○内が％)</div>' : "") +
+    "</div>";
+
+  var chartSeries = hasRate
+    ? [
+        { key: "total", name: "本数", color: COLORS.ice, unit: "本" },
+        { key: "rate", name: "成功率", color: COLORS.amber, unit: "%" },
+      ]
+    : [{ key: "total", name: "本数", color: COLORS.ice, unit: "本" }];
+  pendingCharts.push({ id: id, data: data, series: chartSeries, geom: { xAt: xAt } });
+  return '<div class="chart-wrap" id="' + id + '">' + svg + '<div class="chart-tooltip" style="display:none;"></div></div>' + legend;
+}
 function wireCharts() {
   pendingCharts.forEach(function (chart) {
     var root = document.getElementById(chart.id);
@@ -819,8 +906,12 @@ function renderAthleteDashboard() {
   var last = entries[entries.length - 1];
   var totals = trickTotals(entries);
   var days = daysByCategory(S.dashAthlete);
-  var trend = entries.map(function (e) { return { date: e.date, total: entryTotal(e) }; });
   var isWater = S.dashCategory === "water";
+  var trend = entries.map(function (e) {
+    var t = entryTotal(e);
+    var s = entrySuccess(e);
+    return { date: e.date, total: t, rate: isWater && t > 0 ? Math.round((s / t) * 100) : null };
+  });
 
   var statGrid =
     '<div class="stat-grid">' +
@@ -870,8 +961,8 @@ function renderAthleteDashboard() {
 
   return (
     statGrid +
-    '<div class="chart-card"><div class="chart-title">' + iconTrendingUp(14, COLORS.textFaint) + " 総本数の推移</div>" +
-    renderChartHtml("chart-total", trend, [{ key: "total", name: "本数", color: COLORS.ice, unit: "本" }], 150) +
+    '<div class="chart-card"><div class="chart-title">' + iconTrendingUp(14, COLORS.textFaint) + " 総本数と成功率の推移</div>" +
+    renderTrendChartHtml("chart-total", trend, 150) +
     "</div>" +
     '<div class="card"><div class="recent-title">技別 累計本数' + (isWater ? "・成功率" : "") + "</div><div class=\"rank-list\">" + rankHtml + "</div></div>" +
     '<div><div class="recent-title">直近の記録</div><div class="recent-list">' + recentHtml + "</div></div>" +
