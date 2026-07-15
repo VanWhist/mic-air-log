@@ -1073,18 +1073,25 @@ function setTeamRankMode(mode) { S.teamRankMode = mode; render(); }
 function setTeamRankTrick(id) { S.teamRankTrick = id; render(); }
 
 function renderTeamTotalRanking() {
+  var isWater = S.dashCategory === "water";
   var rows = ATHLETES.map(function (a) {
     var entries = getEntries(a.id, S.dashCategory);
     var total = entries.reduce(function (s, e) { return s + entryTotal(e); }, 0);
+    var success = entries.reduce(function (s, e) { return s + entrySuccess(e); }, 0);
+    var rate = isWater && total > 0 ? Math.round((success / total) * 100) : null;
     var last = entries.length ? entries[entries.length - 1].date : null;
     var stale = last ? (new Date(todayStr()) - new Date(last)) / 86400000 > 10 : true;
-    return { name: a.name, total: total, last: last, stale: stale };
+    return { name: a.name, total: total, rate: rate, last: last, stale: stale };
   });
   rows.sort(function (a, b) { return b.total - a.total; });
   var body = rows.map(function (r) {
+    var rateHtml = r.rate !== null
+      ? '<div style="display:flex;align-items:center;gap:6px;margin-top:6px;"><div class="rank-bar-wrap" style="height:6px;"><div class="rank-bar" style="width:' + r.rate + '%;background:' + COLORS.amber + ';"></div></div><span style="font-size:11px;font-weight:600;color:' + COLORS.amber + ';flex-shrink:0;">成功率 ' + r.rate + '%</span></div>'
+      : "";
     return (
-      '<div class="team-row"><div><div class="team-name">' + escHtml(r.name) + "</div>" +
-      '<div class="team-meta ' + (r.stale ? "team-stale" : "") + '">直近の練習: ' + (r.last ? escHtml(r.last) : "記録なし") + "</div></div>" +
+      '<div class="team-row"><div style="flex:1;min-width:0;margin-right:12px;"><div class="team-name">' + escHtml(r.name) + "</div>" +
+      '<div class="team-meta ' + (r.stale ? "team-stale" : "") + '">直近の練習: ' + (r.last ? escHtml(r.last) : "記録なし") + "</div>" +
+      rateHtml + "</div>" +
       '<div class="team-count">' + r.total + "本</div></div>"
     );
   }).join("");
@@ -1131,7 +1138,7 @@ function renderTeamTrickRanking() {
   var select = renderTeamTrickSelect();
   if (rows.length === 0) {
     return (
-      '<div class="card raised" style="margin-bottom:4px;"><div class="recent-title" style="margin-bottom:10px;">技別ランキング(' + (isWater ? "ウォータージャンプ" : "トランポリン") + ")</div>" + select +
+      '<div class="card raised" style="margin-bottom:4px;"><div class="recent-title" style="margin-bottom:10px;">技別(' + (isWater ? "ウォータージャンプ" : "トランポリン") + ")</div>" + select +
       '<div class="empty-card">まだこの技を跳んだ選手がいません。</div></div>'
     );
   }
@@ -1142,7 +1149,7 @@ function renderTeamTrickRanking() {
     return '<div class="rank-item"><span class="rank-name">' + escHtml(r.name) + '</span><div class="rank-bar-wrap"><div class="rank-bar" style="width:' + pct + '%"></div></div><span class="rank-count">' + countLabel + (r.rate !== null ? " ・ " + r.rate + "%" : "") + "</span></div>";
   }).join("");
   return (
-    '<div class="card raised" style="margin-bottom:4px;"><div class="recent-title" style="margin-bottom:10px;">技別ランキング(' + (isWater ? "ウォータージャンプ" : "トランポリン") + ")</div>" + select +
+    '<div class="card raised" style="margin-bottom:4px;"><div class="recent-title" style="margin-bottom:10px;">技別(' + (isWater ? "ウォータージャンプ" : "トランポリン") + ")</div>" + select +
     '<div class="rank-list">' + body + "</div></div>"
   );
 }
@@ -1153,8 +1160,8 @@ function renderTeamDashboard() {
   }
   var modeToggle =
     '<div class="tabs" style="margin:0 0 12px;">' +
-    '<button class="tab-btn ' + (S.teamRankMode === "total" ? "active" : "") + '" onclick="setTeamRankMode(\'total\')">総本数ランキング</button>' +
-    '<button class="tab-btn ' + (S.teamRankMode === "trick" ? "active" : "") + '" onclick="setTeamRankMode(\'trick\')">技別ランキング</button>' +
+    '<button class="tab-btn ' + (S.teamRankMode === "total" ? "active" : "") + '" onclick="setTeamRankMode(\'total\')">総本数</button>' +
+    '<button class="tab-btn ' + (S.teamRankMode === "trick" ? "active" : "") + '" onclick="setTeamRankMode(\'trick\')">技別</button>' +
     "</div>";
   return modeToggle + (S.teamRankMode === "trick" ? renderTeamTrickRanking() : renderTeamTotalRanking());
 }
