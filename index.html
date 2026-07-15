@@ -1016,7 +1016,7 @@ function renderAthleteDashboard() {
     renderTrendChartHtml("chart-total", trend, 150) +
     "</div>" +
     '<div class="card"><div class="recent-title">技別 累計本数' + (isWater ? "・成功率" : "") + "</div><div class=\"rank-list\">" + rankHtml + "</div></div>" +
-  if \(!kMap\[key\]\) kMap\[key\] = \{ count: 0, success: 0 \};\nkMap\[key\].count += rowTotal\(r\);\nkMap\[key\].success += rowSuccess\(r\) \|\| 0;  renderVideoGalleryCard(entries) +
+        renderVideoGalleryCard(entries) +
     '<div><div class="recent-title">直近の記録</div><div class="recent-list">' + recentHtml + "</div></div>" +
     (isWater ? renderFacilityBreakdown(entries) : "")
   );
