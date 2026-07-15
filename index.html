@@ -553,7 +553,7 @@ function saveEntry() {
       return { trickId: r.trickId, trickLabel: trickLabel(r.trickId), modifier: r.modifier, nuki: !!r.nuki, unnatural: !!r.unnatural, reps: Number(r.reps) || 0 };
     });
   } else {
-    validRows = S.rows.filter(function (r) { return r.success !== "" && Number(r.success) >= 0; }).map(function (r) {
+    validRows = S.rows.filter(function (r) { return ((r.success !== "" && Number(r.success) >= 0) || (r.fail !== "" && Number(r.fail) >= 0)); }).map(function (r) {
       return { trickId: r.trickId, trickLabel: trickLabel(r.trickId), modifier: r.modifier, nuki: !!r.nuki, unnatural: !!r.unnatural, success: Number(r.success) || 0, fail: Number(r.fail) || 0 };
     });
   }
@@ -1092,7 +1092,7 @@ function saveEditEntry(category) {
       return { trickId: r.trickId, trickLabel: trickLabel(r.trickId), modifier: r.modifier, nuki: !!r.nuki, unnatural: !!r.unnatural, reps: Number(r.reps) || 0 };
     });
   } else {
-    validRows = S.editDraft.rows.filter(function (r) { return r.success !== "" && r.success !== undefined && Number(r.success) >= 0; }).map(function (r) {
+    validRows = S.editDraft.rows.filter(function (r) { return ((r.success !== "" && r.success !== undefined && Number(r.success) >= 0) || (r.fail !== "" && r.fail !== undefined && Number(r.fail) >= 0)); }).map(function (r) {
       return { trickId: r.trickId, trickLabel: trickLabel(r.trickId), modifier: r.modifier, nuki: !!r.nuki, unnatural: !!r.unnatural, success: Number(r.success) || 0, fail: Number(r.fail) || 0 };
     });
   }
