@@ -99,6 +99,14 @@
   .video-progress { font-size: 10px; color: #FF9645; flex-shrink: 0; }
   .video-error { font-size: 10px; margin-top: 4px; color: #FF9645; }
 
+  .video-gallery-list { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+  .video-gallery-item { display: flex; align-items: center; gap: 10px; border-radius: 8px; padding: 8px 10px; background: #131F30; border: 1px solid #26374E; text-decoration: none; }
+  .video-gallery-thumb { position: relative; width: 40px; height: 40px; border-radius: 50%; overflow: hidden; background: #1B2C42; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+  .video-gallery-info { flex: 1; min-width: 0; }
+  .video-gallery-date { font-size: 10px; color: #5C7086; font-family: ui-monospace, monospace; }
+  .video-gallery-name { font-size: 13px; color: #EAF1F8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .video-gallery-empty { font-size: 12px; color: #5C7086; text-align: center; padding: 16px 0; }
+
   .team-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; border-radius: 8px; background: #131F30; border: 1px solid #26374E; }
   .team-row + .team-row { margin-top: 8px; }
   .team-name { font-size: 13px; font-weight: 600; }
@@ -516,6 +524,7 @@ var S = {
   videoUploadProgress: 0,
   videoUploadError: "",
   videoUploadErrorKey: "",
+  videoFilterTrick: "all",
 };
 var pendingCharts = [];
 
@@ -895,6 +904,47 @@ function wireCharts() {
   });
 }
 
+function collectVideoItems(entries) {
+  var items = [];
+  entries.forEach(function (e) {
+    e.rows.forEach(function (r) {
+      var vids = videosFor(e.id, r.trickId);
+      vids.forEach(function (v) {
+        items.push({ date: e.date, trickId: r.trickId, label: trickLabel(r.trickId) + (composedCode(r.trickId, r.modifier) ? " (" + composedCode(r.trickId, r.modifier) + ")" : ""), url: v.sharedUrl, fileName: v.fileName });
+      });
+    });
+  });
+  items.sort(function (a, b) { return b.date.localeCompare(a.date); });
+  return items;
+}
+function renderVideoGalleryCard(entries) {
+  var allItems = collectVideoItems(entries);
+  var trickOptions = [];
+  var seenTricks = {};
+  allItems.forEach(function (it) {
+    if (!seenTricks[it.trickId]) { seenTricks[it.trickId] = true; trickOptions.push({ id: it.trickId, label: trickLabel(it.trickId) }); }
+  });
+  var items = S.videoFilterTrick === "all" ? allItems : allItems.filter(function (it) { return it.trickId === S.videoFilterTrick; });
+  var filterHtml = trickOptions.length
+    ? '<div class="select-wrap" style="margin-top:10px;"><select class="select-input" onchange="setVideoFilterTrick(this.value)">' +
+      '<option value="all"' + (S.videoFilterTrick === "all" ? " selected" : "") + ">すべての技</option>" +
+      trickOptions.map(function (t) { return '<option value="' + escAttr(t.id) + '"' + (S.videoFilterTrick === t.id ? " selected" : "") + ">" + escHtml(t.label) + "</option>"; }).join("") +
+      "</select><span class=\"select-chevron\">" + iconChevronDown(16, COLORS.textFaint) + "</span></div>"
+    : "";
+  var listHtml = items.length
+    ? '<div class="video-gallery-list">' +
+      items.map(function (it) {
+        return (
+          '<a class="video-gallery-item" href="' + escAttr(it.url) + '" target="_blank" rel="noopener noreferrer">' +
+          '<div class="video-gallery-thumb">' + iconSvg('<polygon points="6 3 20 12 6 21 6 3"/>', 16, COLORS.ice) + "</div>" +
+          '<div class="video-gallery-info"><div class="video-gallery-date">' + escHtml(it.date) + '</div><div class="video-gallery-name">' + escHtml(it.label) + "</div></div>" +
+          "</a>"
+        );
+      }).join("") +
+      "</div>"
+    : '<div class="video-gallery-empty">' + (allItems.length ? "この技の動画はまだありません。" : "アップロードされた動画はまだありません。") + "</div>";
+  return '<div class="card"><div class="recent-title" style="display:flex;align-items:center;gap:6px;">' + iconSvg('<polygon points="6 3 20 12 6 21 6 3"/>', 14, COLORS.textFaint) + " 動画</div>" + filterHtml + listHtml + "</div>";
+}
 function renderAthleteDashboard() {
   var entries = getEntries(S.dashAthlete, S.dashCategory);
   if (entries.length === 0) {
@@ -965,6 +1015,7 @@ function renderAthleteDashboard() {
     renderTrendChartHtml("chart-total", trend, 150) +
     "</div>" +
     '<div class="card"><div class="recent-title">技別 累計本数' + (isWater ? "・成功率" : "") + "</div><div class=\"rank-list\">" + rankHtml + "</div></div>" +
+    renderVideoGalleryCard(entries) +
     '<div><div class="recent-title">直近の記録</div><div class="recent-list">' + recentHtml + "</div></div>" +
     (isWater ? renderFacilityBreakdown(entries) : "")
   );
@@ -1126,8 +1177,9 @@ function renderDashboardTab() {
     "</div>"
   );
 }
-function setDashAthlete(id) { S.dashAthlete = id; if (id !== "team") touchRecentAthlete(id); S.editingEntryId = null; S.editDraft = null; S.confirmDeleteId = null; render(); }
-function setDashCategory(c) { S.dashCategory = c; S.editingEntryId = null; S.editDraft = null; S.confirmDeleteId = null; render(); }
+function setDashAthlete(id) { S.dashAthlete = id; if (id !== "team") touchRecentAthlete(id); S.editingEntryId = null; S.editDraft = null; S.confirmDeleteId = null; S.videoFilterTrick = "all"; render(); }
+function setDashCategory(c) { S.dashCategory = c; S.editingEntryId = null; S.editDraft = null; S.confirmDeleteId = null; S.videoFilterTrick = "all"; render(); }
+function setVideoFilterTrick(v) { S.videoFilterTrick = v; render(); }
 
 /* ---- ダッシュボードからの記録修正・削除 ---- */
 function startEditEntry(entryId) {
