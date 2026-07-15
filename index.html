@@ -1016,7 +1016,7 @@ function renderAthleteDashboard() {
     renderTrendChartHtml("chart-total", trend, 150) +
     "</div>" +
     '<div class="card"><div class="recent-title">技別 累計本数' + (isWater ? "・成功率" : "") + "</div><div class=\"rank-list\">" + rankHtml + "</div></div>" +
-    renderVideoGalleryCard(entries) +
+  if \(!kMap\[key\]\) kMap\[key\] = \{ count: 0, success: 0 \};\nkMap\[key\].count += rowTotal\(r\);\nkMap\[key\].success += rowSuccess\(r\) \|\| 0;  renderVideoGalleryCard(entries) +
     '<div><div class="recent-title">直近の記録</div><div class="recent-list">' + recentHtml + "</div></div>" +
     (isWater ? renderFacilityBreakdown(entries) : "")
   );
@@ -1033,41 +1033,52 @@ function facilityKickerBreakdown(entries) {
     var kMap = map[e.facility][e.kicker];
     e.rows.forEach(function (r) {
       var key = trickLabel(r.trickId) + (r.nuki ? "（抜き）" : "") + (r.unnatural ? "（アンナチュラル）" : "");
-      kMap[key] = (kMap[key] || 0) + rowTotal(r);
+      if (!kMap[key]) kMap[key] = { count: 0, success: 0 };
+          kMap[key].count += rowTotal(r);
+          kMap[key].success += rowSuccess(r) || 0;
     });
   });
   return { order: order, map: map };
 }
 function sumTrickCounts(tricks) {
-  return Object.keys(tricks).reduce(function (sum, k) { return sum + tricks[k]; }, 0);
+        return Object.keys(tricks).reduce(function (sum, k) { return { count: sum.count + tricks[k].count, success: sum.success + tricks[k].success }; }, { count: 0, success: 0 });
 }
 function renderFacilityBreakdown(entries) {
-  var b = facilityKickerBreakdown(entries);
-  if (b.order.length === 0) return "";
-  var grandTotal = 0;
-  var facilitiesHtml = b.order.map(function (fname) {
-    var kickers = b.map[fname];
-    var canonical = kickersForFacility(fname);
-    var kickerOrder = Object.keys(kickers).sort(function (a, c) {
-      var ia = canonical.indexOf(a); if (ia === -1) ia = 999;
-      var ic = canonical.indexOf(c); if (ic === -1) ic = 999;
-      return ia - ic;
-    });
-    var facilityTotal = 0;
-    var kickersHtml = kickerOrder.map(function (kname) {
-      var tricks = kickers[kname];
-      var kickerTotal = sumTrickCounts(tricks);
-      facilityTotal += kickerTotal;
-      var trickKeys = Object.keys(tricks).sort(function (a, c) { return tricks[c] - tricks[a]; });
-      var chips = trickKeys.map(function (tk) {
-        return '<span class="recent-tech-chip">' + escHtml(tk) + " " + tricks[tk] + "本</span>";
-      }).join("");
-      return '<div style="margin-top:8px;"><div style="font-size:11px;color:' + COLORS.textFaint + ';margin-bottom:4px;display:flex;justify-content:space-between;"><span>' + escHtml(kname) + '</span><span style="color:' + COLORS.ice + ';font-family:ui-monospace,monospace;">' + kickerTotal + '本</span></div><div class="recent-techs">' + chips + "</div></div>";
-    }).join("");
-    grandTotal += facilityTotal;
-    return '<div style="margin-bottom:14px;"><div style="font-size:13px;font-weight:600;display:flex;justify-content:space-between;"><span>' + escHtml(fname) + '</span><span style="color:' + COLORS.ice + ';font-family:ui-monospace,monospace;">累計 ' + facilityTotal + '本</span></div>' + kickersHtml + "</div>";
-  }).join("");
-  return '<div class="card"><div class="recent-title" style="display:flex;justify-content:space-between;"><span>施設・台別 技別本数</span><span>総本数 ' + grandTotal + "本</span></div>" + facilitiesHtml + "</div>";
+        var b = facilityKickerBreakdown(entries);
+        if (b.order.length === 0) return "";
+        var grandCount = 0;
+        var grandSuccess = 0;
+        var facilitiesHtml = b.order.map(function (fname) {
+                  var kickers = b.map[fname];
+                  var canonical = kickersForFacility(fname);
+                  var kickerOrder = Object.keys(kickers).sort(function (a, c) {
+                              var ia = canonical.indexOf(a); if (ia === -1) ia = 999;
+                              var ic = canonical.indexOf(c); if (ic === -1) ic = 999;
+                              return ia - ic;
+                  });
+                  var facilityCount = 0;
+                  var facilitySuccess = 0;
+                  var kickersHtml = kickerOrder.map(function (kname) {
+                              var tricks = kickers[kname];
+                              var kickerTotal = sumTrickCounts(tricks);
+                              facilityCount += kickerTotal.count;
+                              facilitySuccess += kickerTotal.success;
+                              var trickKeys = Object.keys(tricks).sort(function (a, c) { return tricks[c].count - tricks[a].count; });
+                              var kRate = kickerTotal.count > 0 ? Math.round((kickerTotal.success / kickerTotal.count) * 100) : 0;
+                              var chips = trickKeys.map(function (tk) {
+                                            var t = tricks[tk];
+                                            var tRate = t.count > 0 ? Math.round((t.success / t.count) * 100) : 0;
+                                            return '<span class="recent-tech-chip">' + escHtml(tk) + " " + t.success + "/" + t.count + "本・" + tRate + "%</span>";
+                              }).join("");
+                              return '<div style="margin-top:8px;"><div style="font-size:11px;color:' + COLORS.textFaint + ';margin-bottom:4px;display:flex;justify-content:space-between;"><span>' + escHtml(kname) + '</span><span style="color:' + COLORS.ice + ';font-family:ui-monospace,monospace;">' + kickerTotal.success + "/" + kickerTotal.count + "本・" + kRate + '%</span></div><div class="recent-techs">' + chips + "</div></div>";
+                  }).join("");
+                  grandCount += facilityCount;
+                  grandSuccess += facilitySuccess;
+                  var fRate = facilityCount > 0 ? Math.round((facilitySuccess / facilityCount) * 100) : 0;
+                  return '<div style="margin-bottom:14px;"><div style="font-size:13px;font-weight:600;display:flex;justify-content:space-between;"><span>' + escHtml(fname) + '</span><span style="color:' + COLORS.ice + ';font-family:ui-monospace,monospace;">累計 ' + facilitySuccess + "/" + facilityCount + "本・" + fRate + '%</span></div>' + kickersHtml + "</div>";
+        }).join("");
+        var gRate = grandCount > 0 ? Math.round((grandSuccess / grandCount) * 100) : 0;
+        return '<div class="card"><div class="recent-title" style="display:flex;justify-content:space-between;"><span>施設・台別 技別本数</span><span>総本数 ' + grandSuccess + "/" + grandCount + "本・" + gRate + "%</span></div>" + facilitiesHtml + "</div>";
 }
 
 function setTeamRankMode(mode) { S.teamRankMode = mode; render(); }
