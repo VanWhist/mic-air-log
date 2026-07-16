@@ -442,11 +442,11 @@ return a ? a.name : id;
 }
 
 var FACILITIES = [
-{ name: "WJM", kickers: ["手前", "奥"] },
 { name: "O-air", kickers: ["9番台", "その他"] },
 { name: "S-air", kickers: ["モーグル台", "その他"] },
-{ name: "K-air", kickers: ["モーグル台", "その他"] },
 { name: "さのさか", kickers: ["7番台", "6番台", "その他"] },
+{ name: "WJM", kickers: ["手前", "奥"] },
+{ name: "K-air", kickers: ["モーグル台", "その他"] },
 { name: "テイネ", kickers: ["モーグル台", "その他"] },
 ];
 function kickersForFacility(name) {
@@ -556,6 +556,13 @@ var rest = ATHLETES.filter(function (a) { return recentAthleteIds.indexOf(a.id) 
 return used.concat(rest);
 }
 
+function getOrderedFacilities() {
+var counts = {};
+DATA.forEach(function (r) {
+if (r.athlete === S.athlete && r.category === "water" && r.facility) { counts[r.facility] = (counts[r.facility] || 0) + 1; }
+});
+return FACILITIES.slice().sort(function (a, b) { return (counts[b.name] || 0) - (counts[a.name] || 0); });
+}
 /* ---- 選手を追加(名前を入力してリストに増やしていく) ---- */
 function toggleAddAthlete(context) {
 S.addingAthlete = (S.addingAthlete === context) ? null : context;
@@ -921,8 +928,8 @@ return (
 var categoryChips =
 '<button class="chip-btn ' + (S.category === "water" ? "active" : "") + '" onclick="selectCategory(\'water\')">ウォータージャンプ</button>' +
 '<button class="chip-btn ' + (S.category === "trampoline" ? "active" : "") + '" onclick="selectCategory(\'trampoline\')">トランポリン</button>';
-var facilityOptions = FACILITIES.map(function (f) {
-return '<option value="' + escAttr(f.name) + '" ' + (S.facility === f.name ? "selected" : "") + ">" + escHtml(f.name) + "</option>";
+var facilityOptions = getOrderedFacilities().map(function (f) {
+return '<option value="' + escAttr(f.name) + '" ' + (S.facility === f.name ? "selected" : "") + '>' + escHtml(f.name) + '</option>';
 }).join("");
 var kickerChips = kickersForFacility(S.facility).map(function (k) {
 return '<button class="chip-btn ' + (S.kicker === k ? "active" : "") + '" onclick="selectKicker(\'' + k + "')\">" + k + "</button>";
