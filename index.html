@@ -765,7 +765,7 @@ var athleteId = S.athlete;
 var category = S.category;
 // アップロードキューに載せる動画は保存後に実行するので、送信payloadからは除いておく。
 var rowsForServer = validRows.map(function (r) {
-return { rowId: r.rowId, trickId: r.trickId, trickLabel: r.trickLabel, modifier: r.modifier, nuki: r.nuki, unnatural: r.unnatural, success: r.success, fail: r.fail, reps: r.reps };
+return { rowId: r.rowId, trickId: r.trickId, trickLabel: r.trickLabel, modifier: r.modifier, nuki: r.nuki, unnatural: r.unnatural, success: r.success, fail: r.fail, reps: r.reps, kakari: r.kakari, airtimeSeconds: r.airtimeSeconds };
 });
 // 同じ選手・種類・日付の記録がすでにあれば、サーバー側で既存の記録にまとめられる(合算)。
 var payload = {
