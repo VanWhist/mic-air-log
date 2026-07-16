@@ -183,6 +183,7 @@ ATHLETES = (data.athletes || []).map(function (a) { return { id: a.id, name: a.n
 DATA = data.records || [];
 VIDEOS = data.videos || [];
 recentAthleteIds = computeRecentAthleteIds();
+if (!S.athlete && ATHLETES.length) { S.athlete = getOrderedAthletes()[0].id; }
 });
 }
 /* サーバー確認済みの動画(VIDEOS)を行(rowId)単位で検索する。rowId/typeが記録されている
