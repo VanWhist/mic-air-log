@@ -508,7 +508,7 @@ if (modifier === "g") c += "g";
 return c;
 }
 
-function todayStr() { return new Date().toISOString().slice(0, 10); }
+function todayStr() { return new Date(Date.now() + 9 * 60 * 60000).toISOString().slice(0, 10); }
 function escHtml(str) { return String(str == null ? "" : str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
 function escAttr(str) { return escHtml(str).replace(/"/g, "&quot;"); }
 
@@ -697,6 +697,19 @@ S.rows = [emptyTechRow(cat)];
 render();
 }
 function setDate(v) { S.date = v; }
+function hasUnsavedRecordInput() {
+  if ((S.note || "").trim() !== "") return true;
+  if (S.rows.length > 1) return true;
+  return S.rows.some(function (r) {
+    if ((r.success || "") !== "" || (r.fail || "") !== "" || (r.reps || "") !== "") return true;
+    if ((r.successVideos || []).length > 0 || (r.failVideos || []).length > 0 || (r.videos || []).length > 0) return true;
+    return false;
+  });
+}
+function maybeResetDateToToday() {
+  var t = todayStr();
+  if (S.date !== t && !hasUnsavedRecordInput()) { S.date = t; render(); }
+}
 function selectFacility(v) {
 S.facility = v;
 var kickers = kickersForFacility(v);
@@ -924,7 +937,7 @@ return (
 '<div class="section">' +
 '<div><label class="field-label">選手</label>' + athleteSection + "</div>" +
 '<div><label class="field-label">練習の種類</label><div class="chip-grid two">' + categoryChips + "</div></div>" +
-'<div><label class="field-label">日付</label><input class="date-input" type="date" value="' + escAttr(S.date) + '" onchange="setDate(this.value)"></div>' +
+'<div><label class="field-label">日付' + (S.date !== todayStr() ? ' <span style="display:inline-block;margin-left:6px;padding:1px 8px;border-radius:10px;background:#2A1F0E;border:1px solid #6B4A1E;color:#FFB870;font-size:10px;font-weight:700;vertical-align:middle;">\u26a0 \u4eca\u65e5\u3067\u306f\u3042\u308a\u307e\u305b\u3093</span>' : '') + '</label><input class="date-input" type="date" value="' + escAttr(S.date) + '" onchange="setDate(this.value)"></div>' +
 (S.category === "water"
 ? '<div><label class="field-label">施設</label><div class="select-wrap"><select class="select-input" onchange="selectFacility(this.value)">' + facilityOptions + "</select>" +
 '<span class="select-chevron">' + iconChevronDown(16, COLORS.textFaint) + "</span></div>" +
@@ -1748,6 +1761,8 @@ render();
 });
 }
 
+document.addEventListener("visibilitychange", function () { if (document.visibilityState === "visible") maybeResetDateToToday(); });
+window.addEventListener("pageshow", function () { maybeResetDateToToday(); });
 loadAll();
 </script>
 </body>
