@@ -398,7 +398,7 @@ if (row.rowId) return Promise.resolve(row.rowId);
 var newRowId = genRowId();
 var rows = entry.rows.map(function (r, i) {
 var out = { rowId: i === rowIdx ? newRowId : (r.rowId || undefined), trickId: r.trickId, trickLabel: trickLabel(r.trickId), modifier: r.modifier, nuki: !!r.nuki, unnatural: !!r.unnatural };
-if (entry.category === "trampoline") out.reps = r.reps; else { out.success = r.success; out.fail = r.fail; }
+if (entry.category === "trampoline") { out.reps = r.reps; out.kakari = !!r.kakari; out.airtimeSeconds = r.airtimeSeconds; } else { out.success = r.success; out.fail = r.fail; }
 return out;
 });
 return apiPost({ type: "updateEntry", entryId: entry.id, athlete: entry.athlete, athleteName: entry.athleteName, category: entry.category, date: entry.date, facility: entry.facility, kicker: entry.kicker, note: entry.note, rows: rows }).then(function (res) {
@@ -483,6 +483,7 @@ var TRICKS = [
 { group: "ループ", items: [
 { id: "loop_l", label: "ループ", code: "l" },
 ]},
+{ group: "エアタイム", items: [{ id: "airtime", label: "10本ジャンプ", code: null }] },
 ];
 var LEGACY_TRICKS = [
 { id: "inv_bpt", label: "バックタック/パイク", code: "bP/bT" },
@@ -658,7 +659,7 @@ render();
 
 /* ---- app state ---- */
 function emptyTechRow(category) {
-if (category === "trampoline") return { rowId: genRowId(), trickId: "rot_3", modifier: "none", nuki: false, unnatural: false, reps: "", videos: [] };
+if (category === "trampoline") return { rowId: genRowId(), trickId: "rot_3", modifier: "none", nuki: false, unnatural: false, kakari: false, reps: "", videos: [] };
 return { rowId: genRowId(), trickId: "rot_3", modifier: "none", nuki: false, unnatural: false, success: "", fail: "", successVideos: [], failVideos: [] };
 }
 var S = {
@@ -741,14 +742,15 @@ function setRowTrick(idx, v) { S.rows[idx].trickId = v; render(); }
 function setRowModifier(idx, m) { S.rows[idx].modifier = m; render(); }
 function toggleRowNuki(idx) { S.rows[idx].nuki = !S.rows[idx].nuki; render(); }
 function toggleRowUnnatural(idx) { S.rows[idx].unnatural = !S.rows[idx].unnatural; render(); }
+function toggleRowKakari(idx) { S.rows[idx].kakari = !S.rows[idx].kakari; render(); }
 function setRowField(idx, field, v) { S.rows[idx][field] = v; }
 
 function saveEntry() {
 if (!S.athlete) return;
 var validRows;
 if (S.category === "trampoline") {
-validRows = S.rows.filter(function (r) { return r.reps !== "" && Number(r.reps) >= 0; }).map(function (r) {
-return { rowId: r.rowId, trickId: r.trickId, trickLabel: trickLabel(r.trickId), modifier: r.modifier, nuki: !!r.nuki, unnatural: !!r.unnatural, reps: Number(r.reps) || 0, _videoFiles: [{ type: "single", items: (r.videos || []).filter(function (v) { return v.file; }) }] };
+validRows = S.rows.filter(function (r) { if (r.trickId === "airtime") { return r.airtimeSeconds !== "" && Number(r.airtimeSeconds) >= 0; } return r.reps !== "" && Number(r.reps) >= 0; }).map(function (r) {
+return { rowId: r.rowId, trickId: r.trickId, trickLabel: trickLabel(r.trickId), modifier: r.modifier, nuki: !!r.nuki, unnatural: !!r.unnatural, kakari: !!r.kakari, reps: r.trickId === "airtime" ? 10 : (Number(r.reps) || 0), airtimeSeconds: r.trickId === "airtime" ? (Number(r.airtimeSeconds) || 0) : '', _videoFiles: [{ type: "single", items: (r.videos || []).filter(function (v) { return v.file; }) }] };
 });
 } else {
 validRows = S.rows.filter(function (r) { return ((r.success !== "" && Number(r.success) >= 0) || (r.fail !== "" && Number(r.fail) >= 0)); }).map(function (r) {
@@ -813,7 +815,7 @@ render();
 
 /* ---- record tab render ---- */
 function renderTrickSelect(idx, row) {
-var optgroups = TRICKS.map(function (g) {
+var optgroups = TRICKS.filter(function (g) { return g.group !== "エアタイム" || S.category === "trampoline"; }).map(function (g) {
 var opts = g.items.map(function (t) {
 return '<option value="' + t.id + '" ' + (row.trickId === t.id ? "selected" : "") + ">" + escHtml(t.label) + (t.code ? " (" + t.code + ")" : "") + "</option>";
 }).join("");
@@ -875,6 +877,17 @@ return (
 
 function renderTechRow(row, idx) {
 var code = composedCode(row.trickId, row.modifier);
+if (row.trickId === "airtime") {
+return ('<div class="tech-row">' +
+'<div class="tech-row-top"><span class="tech-row-idx">技 ' + (idx + 1) + '</span>' +
+'<button class="remove-btn" onclick="removeTechRow(' + idx + ')" style="margin-left:auto;">' + iconMinus(14, COLORS.textFaint) + '</button>' +
+'</div>' +
+renderTrickSelect(idx, row) +
+'<div class="inline-row"><div class="num-field"><span class="num-field-label">時間(秒)</span>' +
+'<input class="num-input" type="number" inputmode="decimal" placeholder="0" value="' + escAttr(row.airtimeSeconds) + '" oninput="setRowField(' + idx + ",'airtimeSeconds',this.value)\" onblur=\"render()\"></div></div>" +
+'</div>');
+}
+
 var countFields = S.category === "trampoline"
 ? '<div class="num-field"><span class="num-field-label">本数</span><input class="num-input" type="number" inputmode="numeric" placeholder="0" value="' + escAttr(row.reps) + '" oninput="setRowField(' + idx + ",'reps',this.value)\" onblur=\"render()\"></div>"
 : '<div class="num-field"><span class="num-field-label">成功本数</span><input class="num-input" type="number" inputmode="numeric" placeholder="0" value="' + escAttr(row.success) + '" oninput="setRowField(' + idx + ",'success',this.value)\" onblur=\"render()\"></div>" +
@@ -885,18 +898,20 @@ return '<button class="chip-btn ' + (isGrabLetter ? "amber " : "") + (row.modifi
 }).join("");
 var nukiChip = '<button class="chip-btn ' + (row.nuki ? "active" : "") + '" style="flex:1;font-size:10px;padding:8px 3px;" onclick="toggleRowNuki(' + idx + ')">抜き<span style="display:block;font-size:8px;font-weight:400;opacity:.75;">(台の踏切抜き)</span></button>';
 var unnaturalChip = '<button class="chip-btn ' + (row.unnatural ? "active" : "") + '" style="flex:1;font-size:10px;padding:8px 3px;" onclick="toggleRowUnnatural(' + idx + ')">アンナチュラル<span style="display:block;font-size:8px;font-weight:400;opacity:.75;">(逆回転)</span></button>';
+var kakariChip = S.category === "trampoline" ? '<button class="chip-btn ' + (row.kakari ? "active" : "") + '" style="flex:1;font-size:10px;padding:8px 3px;" onclick="toggleRowKakari(' + idx + ')">かかり</button>' : "";
 return (
 '<div class="tech-row">' +
 '<div class="tech-row-top"><span class="tech-row-idx">技 ' + (idx + 1) + "</span>" +
 (code ? '<span class="code-badge">' + escHtml(code) + "</span>" : "") +
 (row.nuki ? '<span class="code-badge" style="color:' + COLORS.amber + ';border-color:' + COLORS.amber + ';">抜き</span>' : "") +
 (row.unnatural ? '<span class="code-badge" style="color:' + COLORS.ice + ';border-color:' + COLORS.ice + ';">アンナチュラル</span>' : "") +
+(row.kakari ? '<span class="code-badge">かかり</span>' : "") +
 '<button class="remove-btn" onclick="removeTechRow(' + idx + ')" style="margin-left:auto;">' + iconMinus(14, COLORS.textFaint) + "</button>" +
 "</div>" +
 renderTrickSelect(idx, row) +
 '<div class="inline-row">' + modifierChips + "</div>" +
 (row.modifier === "g" ? '<div class="grab-note">※ g は新基準で追加予定のコード。DD値は未定のためドラフト上は暫定表示です。</div>' : "") +
-'<div class="inline-row">' + nukiChip + unnaturalChip + "</div>" +
+'<div class="inline-row">' + nukiChip + unnaturalChip + kakariChip + "</div>" +
 '<div class="sub-label">「抜き」は台の踏切を抜いて飛ぶデュアルモーグル練習用、「アンナチュラル」は通常と逆回転で行う技。どちらもグラブ・ポジション/G/gや、お互いと組み合わせて選択できます。</div>' +
 '<div class="inline-row">' + countFields + "</div>" +
 (S.category === "trampoline"
@@ -1409,7 +1424,7 @@ return (
 }
 
 function renderTeamTrickSelect() {
-var optgroups = TRICKS.map(function (g) {
+var optgroups = TRICKS.filter(function (g) { return g.group !== "エアタイム"; }).map(function (g) {
 var opts = g.items.map(function (t) {
 return '<option value="' + t.id + '" ' + (S.teamRankTrick === t.id ? "selected" : "") + ">" + escHtml(t.label) + (t.code ? " (" + t.code + ")" : "") + "</option>";
 }).join("");
@@ -1541,6 +1556,7 @@ function setEditRowTrick(idx, v) { S.editDraft.rows[idx].trickId = v; render(); 
 function setEditRowModifier(idx, m) { S.editDraft.rows[idx].modifier = m; render(); }
 function toggleEditRowNuki(idx) { S.editDraft.rows[idx].nuki = !S.editDraft.rows[idx].nuki; render(); }
 function toggleEditRowUnnatural(idx) { S.editDraft.rows[idx].unnatural = !S.editDraft.rows[idx].unnatural; render(); }
+function toggleEditRowKakari(idx) { S.editDraft.rows[idx].kakari = !S.editDraft.rows[idx].kakari; render(); }
 function setEditRowField(idx, field, v) { S.editDraft.rows[idx][field] = v; }
 
 function saveEditEntry(category) {
@@ -1548,8 +1564,8 @@ var entry = DATA.filter(function (x) { return x.id === S.editingEntryId; })[0];
 if (!entry) return;
 var validRows;
 if (category === "trampoline") {
-validRows = S.editDraft.rows.filter(function (r) { return r.reps !== "" && r.reps !== undefined && Number(r.reps) >= 0; }).map(function (r) {
-return { rowId: r.rowId || genRowId(), trickId: r.trickId, trickLabel: trickLabel(r.trickId), modifier: r.modifier, nuki: !!r.nuki, unnatural: !!r.unnatural, reps: Number(r.reps) || 0 };
+validRows = S.editDraft.rows.filter(function (r) { if (r.trickId === "airtime") { return r.airtimeSeconds !== "" && r.airtimeSeconds !== undefined && Number(r.airtimeSeconds) >= 0; } return r.reps !== "" && r.reps !== undefined && Number(r.reps) >= 0; }).map(function (r) {
+return { rowId: r.rowId || genRowId(), trickId: r.trickId, trickLabel: trickLabel(r.trickId), modifier: r.modifier, nuki: !!r.nuki, unnatural: !!r.unnatural, kakari: !!r.kakari, reps: r.trickId === "airtime" ? 10 : (Number(r.reps) || 0), airtimeSeconds: r.trickId === "airtime" ? (Number(r.airtimeSeconds) || 0) : '' };
 });
 } else {
 validRows = S.editDraft.rows.filter(function (r) { return ((r.success !== "" && r.success !== undefined && Number(r.success) >= 0) || (r.fail !== "" && r.fail !== undefined && Number(r.fail) >= 0)); }).map(function (r) {
@@ -1619,7 +1635,7 @@ return '<button class="chip-btn ' + (isGrabLetter ? "amber " : "") + (row.modifi
 }).join("");
 var nukiChip = '<button class="chip-btn ' + (row.nuki ? "active" : "") + '" style="flex:1;font-size:10px;padding:8px 3px;" onclick="toggleEditRowNuki(' + idx + ')">抜き</button>';
 var unnaturalChip = '<button class="chip-btn ' + (row.unnatural ? "active" : "") + '" style="flex:1;font-size:10px;padding:8px 3px;" onclick="toggleEditRowUnnatural(' + idx + ')">アンナチュラル</button>';
-var optgroups = TRICKS.map(function (g) {
+var optgroups = TRICKS.filter(function (g) { return g.group !== "エアタイム" || category === "trampoline"; }).map(function (g) {
 var opts = g.items.map(function (t) {
 return '<option value="' + t.id + '" ' + (row.trickId === t.id ? "selected" : "") + ">" + escHtml(t.label) + (t.code ? " (" + t.code + ")" : "") + "</option>";
 }).join("");
