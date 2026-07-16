@@ -1002,13 +1002,14 @@ var map = {};
 entries.forEach(function (e) {
 e.rows.forEach(function (r) {
 var key = trickLabel(r.trickId) + (r.nuki ? "（抜き）" : "") + (r.unnatural ? "（アンナチュラル）" : "");
-if (!map[key]) map[key] = { count: 0, success: 0 };
+if (!map[key]) map[key] = { count: 0, success: 0, kakari: 0 };
 map[key].count += rowTotal(r);
 var s = rowSuccess(r);
 if (s !== null) map[key].success += s;
+if (r.kakari) map[key].kakari += 1;
 });
 });
-return Object.keys(map).map(function (k) { return { name: k, count: map[k].count, success: map[k].success }; }).sort(function (a, b) { return b.count - a.count; });
+return Object.keys(map).map(function (k) { return { name: k, count: map[k].count, success: map[k].success, kakari: map[k].kakari }; }).sort(function (a, b) { return b.count - a.count; });
 }
 function daysByCategory(athleteId) {
 var water = getEntries(athleteId, "water");
@@ -1293,14 +1294,15 @@ var pct = Math.round((t.count / maxCount) * 100);
 var trate = isWater && t.count > 0 ? Math.round((t.success / t.count) * 100) : null;
 var countLabel = isWater ? (t.success + "/" + t.count + "本") : (t.count + "本");
 var countCap = isWater ? '<span class="rank-count-cap">成功/本数</span>' : "";
-return '<div class="rank-item"><span class="rank-name">' + escHtml(t.name) + '</span><div class="rank-bar-wrap"><div class="rank-bar" style="width:' + pct + '%"></div></div><span class="rank-count">' + countCap + countLabel + (trate !== null ? " ・ " + trate + "%" : "") + "</span></div>";
+var kakariLabel = (!isWater && t.kakari > 0) ? " ・かかり×" + t.kakari : "";
+return '<div class="rank-item"><span class="rank-name">' + escHtml(t.name) + '</span><div class="rank-bar-wrap"><div class="rank-bar" style="width:' + pct + '%"></div></div><span class="rank-count">' + countCap + countLabel + (trate !== null ? " ・ " + trate + "%" : "") + kakariLabel + "</span></div>";
 }).join("");
 
 var recentHtml = entries.slice().reverse().slice(0, 6).map(function (e) {
 var techChips = e.rows.map(function (r, ri) {
 var code = composedCode(r.trickId, r.modifier);
-var countLabel = r.reps !== undefined ? r.reps + "本" : r.success + "/" + (r.success + r.fail);
-var chipHtml = '<span class="recent-tech-chip">' + escHtml(trickLabel(r.trickId)) + (code ? " (" + escHtml(code) + ")" : "") + (r.nuki ? " ・抜き" : "") + (r.unnatural ? " ・アンナチュラル" : "") + " " + countLabel + "</span>";
+var countLabel = r.trickId === "airtime" ? (Number(r.airtimeSeconds) || 0) + "秒" : (r.reps !== undefined ? r.reps + "本" : r.success + "/" + (r.success + r.fail));
+var chipHtml = '<span class="recent-tech-chip">' + escHtml(trickLabel(r.trickId)) + (code ? " (" + escHtml(code) + ")" : "") + (r.nuki ? " ・抜き" : "") + (r.unnatural ? " ・アンナチュラル" : "") + (r.kakari ? " ・かかり" : "") + " " + countLabel + "</span>";
 var videoBtns = r.reps !== undefined
 ? renderDashVideoGallery(e.id, ri, r, "single", "動画")
 : renderDashVideoGallery(e.id, ri, r, "success", "成功") + renderDashVideoGallery(e.id, ri, r, "fail", "失敗");
@@ -1321,11 +1323,44 @@ return (
 );
 }).join("");
 
+var airtimeRows = [];
+if (!isWater) {
+entries.forEach(function (e) {
+e.rows.forEach(function (r) {
+if (r.trickId === "airtime" && r.airtimeSeconds !== "" && r.airtimeSeconds !== null && r.airtimeSeconds !== undefined) {
+airtimeRows.push({ date: e.date, seconds: Number(r.airtimeSeconds) || 0 });
+}
+});
+});
+}
+var bestAirtime = airtimeRows.length ? airtimeRows.reduce(function (a, b) { return b.seconds > a.seconds ? b : a; }) : null;
+var airtimeHistory = airtimeRows.slice().sort(function (a, b) { return b.date.localeCompare(a.date) || b.seconds - a.seconds; });
+var airtimeTrend = airtimeRows.slice().sort(function (a, b) { return a.date.localeCompare(b.date); }).map(function (ar) { return { date: ar.date, total: ar.seconds, rate: null }; });
+
+var bestTimeCard = !isWater ? (
+'<div class="card">' +
+'<div class="recent-title">10本ジャンプ ベストタイム</div>' +
+(bestAirtime
+? '<div class="stat-value" style="font-size:22px;">' + bestAirtime.seconds + '秒</div><div class="stat-sub">' + escHtml(bestAirtime.date) + '</div>'
+: '<div class="stat-sub">記録がまだありません</div>') +
+(airtimeHistory.length ? '<button class="chip-btn" style="margin-top:8px;font-size:10px;padding:6px 10px;" onclick="toggleBestTimeExpand()">' + (S.dashBestTimeExpanded ? "閉じる" : "履歴を見る (" + airtimeHistory.length + "件)") + '</button>' : "") +
+(S.dashBestTimeExpanded ? '<div class="recent-list" style="margin-top:8px;">' + airtimeHistory.map(function (ar) { return '<div class="recent-tech-row"><span class="recent-tech-chip">' + escHtml(ar.date) + ' ・ ' + ar.seconds + '秒</span></div>'; }).join("") + '</div>' : "") +
+'</div>'
+) : "";
+
+var airtimeChartCard = (!isWater && airtimeTrend.length) ? (
+'<div class="chart-card"><div class="chart-title">' + iconTrendingUp(14, COLORS.textFaint) + " 10本ジャンプ タイムの推移</div>" +
+renderTrendChartHtml("chart-airtime", airtimeTrend, 150) +
+"</div>"
+) : "";
+
 return (
 statGrid +
+bestTimeCard +
 '<div class="chart-card"><div class="chart-title">' + iconTrendingUp(14, COLORS.textFaint) + " 総本数と成功率の推移</div>" +
 renderTrendChartHtml("chart-total", trend, 150) +
 "</div>" +
+airtimeChartCard +
 '<div class="card"><div class="recent-title">技別 累計本数' + (isWater ? "・成功率" : "") + "</div><div class=\"rank-list\">" + rankHtml + "</div></div>" +
 renderVideoGalleryCard(entries) +
 '<div><div class="recent-title">直近の記録</div><div class="recent-list">' + recentHtml + "</div></div>" +
@@ -1508,8 +1543,9 @@ body +
 "</div>"
 );
 }
-function setDashAthlete(id) { S.dashAthlete = id; if (id !== "team") touchRecentAthlete(id); S.editingEntryId = null; S.editDraft = null; S.confirmDeleteId = null; S.videoFilterTrick = "all"; render(); }
-function setDashCategory(c) { S.dashCategory = c; S.editingEntryId = null; S.editDraft = null; S.confirmDeleteId = null; S.videoFilterTrick = "all"; render(); }
+function setDashAthlete(id) { S.dashAthlete = id; if (id !== "team") touchRecentAthlete(id); S.editingEntryId = null; S.editDraft = null; S.confirmDeleteId = null; S.videoFilterTrick = "all"; S.dashBestTimeExpanded = false; render(); }
+function setDashCategory(c) { S.dashCategory = c; S.editingEntryId = null; S.editDraft = null; S.confirmDeleteId = null; S.videoFilterTrick = "all"; S.dashBestTimeExpanded = false; render(); }
+function toggleBestTimeExpand() { S.dashBestTimeExpanded = !S.dashBestTimeExpanded; render(); }
 function setVideoFilterTrick(v) { S.videoFilterTrick = v; render(); }
 
 /* ---- ダッシュボードからの記録修正・削除 ---- */
