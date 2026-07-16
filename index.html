@@ -470,20 +470,27 @@ var TRICKS = [
 { id: "oax_14", label: "オフアクシス1440", code: "14o" },
 ]},
 { group: "宙返り系", items: [
-{ id: "inv_bpt", label: "バックタック/パイク", code: "bP/bT" },
+{ id: "inv_bt", label: "バックタック", code: "bT" },
+{ id: "inv_bp", label: "バックパイク", code: "bP" },
 { id: "inv_bl", label: "バックレイアウト", code: "bL" },
 { id: "inv_bf", label: "バックフル", code: "bF" },
 { id: "inv_bdf", label: "バックダブルフル", code: "bdF" },
 { id: "inv_btf", label: "バックトリプルフル", code: "btF" },
-{ id: "inv_fpt", label: "フロントタック/パイク", code: "fT/fP" },
+{ id: "inv_ft", label: "フロントタック", code: "fT" },
+{ id: "inv_fp", label: "フロントパイク", code: "fP" },
 { id: "inv_ff", label: "フロントフル", code: "fF" },
 ]},
 { group: "ループ", items: [
 { id: "loop_l", label: "ループ", code: "l" },
 ]},
 ];
+var LEGACY_TRICKS = [
+{ id: "inv_bpt", label: "バックタック/パイク", code: "bP/bT" },
+{ id: "inv_fpt", label: "フロントタック/パイク", code: "fT/fP" }
+];
 var TRICK_INDEX = {};
 TRICKS.forEach(function (g) { g.items.forEach(function (t) { TRICK_INDEX[t.id] = t; }); });
+LEGACY_TRICKS.forEach(function (t) { TRICK_INDEX[t.id] = t; });
 
 function trickLabel(id) {
 var t = TRICK_INDEX[id];
