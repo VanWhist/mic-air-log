@@ -690,7 +690,7 @@ bgUpload: null,
 };
 var pendingCharts = [];
 
-function selectTab(tab) { S.tab = tab; if (tab !== "dashboard") { S.editingEntryId = null; S.editDraft = null; S.confirmDeleteId = null; } render(); }
+function selectTab(tab) { S.tab = tab; if (tab !== "dashboard") { S.editingEntryId = null; S.editDraft = null; S.confirmDeleteId = null; } else if (S.athlete) { S.dashAthlete = S.athlete; } render(); }
 function selectAthlete(id) { S.athlete = id; touchRecentAthlete(id); render(); }
 function selectCategory(cat) {
 S.category = cat;
