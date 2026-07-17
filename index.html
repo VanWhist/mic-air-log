@@ -659,8 +659,9 @@ render();
 
 /* ---- app state ---- */
 function emptyTechRow(category) {
-if (category === "trampoline") return { rowId: genRowId(), trickId: "rot_3", modifier: "none", nuki: false, unnatural: false, kakari: false, reps: "", videos: [] };
-return { rowId: genRowId(), trickId: "rot_3", modifier: "none", nuki: false, unnatural: false, success: "", fail: "", successVideos: [], failVideos: [] };
+var defaultTrick = (typeof S !== "undefined" && S && S.trickLastUsed && (S.trickLastUsed !== "airtime" || category === "trampoline")) ? S.trickLastUsed : "rot_3";
+if (category === "trampoline") return { rowId: genRowId(), trickId: defaultTrick, modifier: "none", nuki: false, unnatural: false, kakari: false, reps: "", videos: [] };
+return { rowId: genRowId(), trickId: defaultTrick, modifier: "none", nuki: false, unnatural: false, success: "", fail: "", successVideos: [], failVideos: [] };
 }
 var S = {
 trickUsageCount: {},
