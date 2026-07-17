@@ -782,11 +782,11 @@ if (!S.athlete) return;
 var validRows;
 if (S.category === "trampoline") {
 validRows = S.rows.filter(function (r) { if (r.trickId === "airtime") { return r.airtimeSeconds !== "" && Number(r.airtimeSeconds) >= 0; } return r.reps !== "" && Number(r.reps) >= 0; }).map(function (r) {
-return { rowId: r.rowId, trickId: r.trickId, trickLabel: trickLabel(r.trickId), modifier: r.modifier, nuki: !!r.nuki, unnatural: !!r.unnatural, kakari: !!r.kakari, reps: r.trickId === "airtime" ? 10 : (Number(r.reps) || 0), airtimeSeconds: r.trickId === "airtime" ? (Number(r.airtimeSeconds) || 0) : '', _videoFiles: [{ type: "single", items: (r.videos || []).filter(function (v) { return v.file; }) }] };
+return { rowId: r.rowId, note: r.note, trickId: r.trickId, trickLabel: trickLabel(r.trickId), modifier: r.modifier, nuki: !!r.nuki, unnatural: !!r.unnatural, kakari: !!r.kakari, reps: r.trickId === "airtime" ? 10 : (Number(r.reps) || 0), airtimeSeconds: r.trickId === "airtime" ? (Number(r.airtimeSeconds) || 0) : '', _videoFiles: [{ type: "single", items: (r.videos || []).filter(function (v) { return v.file; }) }] };
 });
 } else {
 validRows = S.rows.filter(function (r) { return ((r.success !== "" && Number(r.success) >= 0) || (r.fail !== "" && Number(r.fail) >= 0)); }).map(function (r) {
-return { rowId: r.rowId, trickId: r.trickId, trickLabel: trickLabel(r.trickId), modifier: r.modifier, nuki: !!r.nuki, unnatural: !!r.unnatural, success: Number(r.success) || 0, fail: Number(r.fail) || 0, _videoFiles: [{ type: "success", items: (r.successVideos || []).filter(function (v) { return v.file; }) }, { type: "fail", items: (r.failVideos || []).filter(function (v) { return v.file; }) }] };
+return { rowId: r.rowId, note: r.note, trickId: r.trickId, trickLabel: trickLabel(r.trickId), modifier: r.modifier, nuki: !!r.nuki, unnatural: !!r.unnatural, success: Number(r.success) || 0, fail: Number(r.fail) || 0, _videoFiles: [{ type: "success", items: (r.successVideos || []).filter(function (v) { return v.file; }) }, { type: "fail", items: (r.failVideos || []).filter(function (v) { return v.file; }) }] };
 });
 }
 if (validRows.length === 0) return;
