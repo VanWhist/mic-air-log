@@ -67,6 +67,11 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.7); cur
 
 .note-textarea { width: 100%; border-radius: 8px; padding: 10px 12px; font-size: 14px; background: #1B2C42; border: 1px solid #26374E; color: #EAF1F8; outline: none; resize: none; }
 
+.tech-note-toggle { margin-top: 6px; }
+.tech-note-toggle a { color: #FFB870; font-size: 13px; text-decoration: none; }
+.tech-note-row { margin-top: 6px; }
+.tech-note-row .note-textarea { font-size: 13px; padding: 8px 10px; }
+
 .save-btn { width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 0; border-radius: 12px; font-size: 14px; font-weight: 600; border: none; cursor: pointer; background: #4CC3F0; color: #062230; }
 .save-btn.flash { background: #3FAE6A; }
 
@@ -98,6 +103,7 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.7); cur
 .recent-tech-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
 .recent-tech-chip { font-size: 11px; background: #1B2C42; border: 1px solid #26374E; border-radius: 6px; padding: 3px 7px; }
 .recent-note { font-size: 11px; margin-top: 4px; color: #5C7086; }
+.tech-note-row-display { font-size: 11px; margin-top: 2px; margin-bottom: 4px; color: #5C7086; padding-left: 2px; }
 .video-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px; }
 .video-row.single { grid-template-columns: 1fr; }
 .video-slot-label { font-size: 10px; color: #5C7086; margin-bottom: 4px; display: block; }
@@ -678,13 +684,13 @@ render();
 /* ---- app state ---- */
 function emptyTechRow(category) {
 var defaultTrick = (typeof S !== "undefined" && S && S.trickLastUsed && (S.trickLastUsed !== "airtime" || category === "trampoline")) ? S.trickLastUsed : "rot_3";
-if (category === "trampoline") return { rowId: genRowId(), trickId: defaultTrick, modifier: "none", nuki: false, unnatural: false, kakari: false, reps: "", videos: [] };
-return { rowId: genRowId(), trickId: defaultTrick, modifier: "none", nuki: false, unnatural: false, success: "", fail: "", successVideos: [], failVideos: [] };
+if (category === "trampoline") return { rowId: genRowId(), trickId: defaultTrick, modifier: "none", nuki: false, unnatural: false, note: "", kakari: false, reps: "", videos: [] };
+return { rowId: genRowId(), trickId: defaultTrick, modifier: "none", nuki: false, unnatural: false, success: "", fail: "", note: "", successVideos: [], failVideos: [] };
 }
 var S = {
 dashRecentRange: "recent",
 dashChipsExpanded: {},
-dashNoteOpen: {},refreshing: false,
+dashNoteOpen: {},dashRowNoteOpen: {},refreshing: false,
 refreshError: "",
 
 trickUsageCount: {},
@@ -791,7 +797,7 @@ var athleteId = S.athlete;
 var category = S.category;
 // アップロードキューに載せる動画は保存後に実行するので、送信payloadからは除いておく。
 var rowsForServer = validRows.map(function (r) {
-return { rowId: r.rowId, trickId: r.trickId, trickLabel: r.trickLabel, modifier: r.modifier, nuki: r.nuki, unnatural: r.unnatural, success: r.success, fail: r.fail, reps: r.reps, kakari: r.kakari, airtimeSeconds: r.airtimeSeconds };
+return { rowId: r.rowId, trickId: r.trickId, trickLabel: r.trickLabel, modifier: r.modifier, nuki: r.nuki, unnatural: r.unnatural, success: r.success, fail: r.fail, reps: r.reps, kakari: r.kakari, airtimeSeconds: r.airtimeSeconds, note: (r.note || "").trim() };
 });
 // 同じ選手・種類・日付の記録がすでにあれば、サーバー側で既存の記録にまとめられる(合算)。
 var payload = {
@@ -918,6 +924,13 @@ return (
 );
 }
 
+function toggleRowNoteOpen(idx) { S.rows[idx]._noteOpen = !S.rows[idx]._noteOpen; render(); }
+function renderTechRowNoteHtml(row, idx) {
+var noteOpen = row._noteOpen || (row.note && row.note.trim());
+if (!noteOpen) { return '<div class="tech-note-toggle"><a href="javascript:void(0)" onclick="toggleRowNoteOpen(' + idx + ')">+ メモ</a></div>'; }
+return '<div class="tech-note-row"><textarea class="note-textarea tech-note-input" rows="2" placeholder="この技のメモ" oninput="setRowField(' + idx + ",'note',this.value)\" onblur=\"render()\">" + escHtml(row.note || '') + "</textarea></div>";
+}
+
 function renderTechRow(row, idx) {
 var code = composedCode(row.trickId, row.modifier);
 if (row.trickId === "airtime") {
@@ -961,6 +974,7 @@ renderTrickSelect(idx, row) +
 ? '<div class="video-row single">' + renderVideoSlot(idx, "single", "動画(任意)") + "</div>"
 : '<div class="video-row">' + renderVideoSlot(idx, "success", "成功動画(任意)") + renderVideoSlot(idx, "fail", "失敗動画(任意)") + "</div>"
 ) +
+renderTechRowNoteHtml(row, idx) +
 "</div>"
 );
 }
@@ -1312,6 +1326,7 @@ function dashRangeStart(range) { var now = new Date(); if (range === "week") { v
 function isInDashRange(dateStr, range) { if (range === "recent") return true; var d = new Date(dateStr + "T00:00:00"); var start = dashRangeStart(range); return d >= start; }
 function toggleDashChips(entryId) { S.dashChipsExpanded[entryId] = !S.dashChipsExpanded[entryId]; render(); }
 function toggleDashNote(entryId) { S.dashNoteOpen[entryId] = !S.dashNoteOpen[entryId]; render(); }
+function toggleDashRowNote(rowId) { S.dashRowNoteOpen[rowId] = !S.dashRowNoteOpen[rowId]; render(); }
 function renderAthleteDashboard() {
 var entries = getEntries(S.dashAthlete, S.dashCategory);
 if (entries.length === 0) {
@@ -1350,7 +1365,7 @@ return '<div class="rank-item"><span class="rank-name">' + escHtml(t.name) + '</
 var recentHtml = (S.dashRecentRange === "recent" ? entries.slice().reverse().slice(0, 6) : entries.filter(function (fe) { return isInDashRange(fe.date, S.dashRecentRange); }).slice().reverse()).map(function (e) {
 var chipsExpanded = !!S.dashChipsExpanded[e.id];
 var shownRows = chipsExpanded ? e.rows : e.rows.slice(0, 10);
-var techChips = shownRows.map(function (r, ri) { var code = composedCode(r.trickId, r.modifier); var countLabel = (r.reps !== undefined ? r.reps + "本" : r.success + "/" + (r.success + r.fail)); var chipHtml = '<span class="recent-tech-chip"' + (e.note ? ' onclick="toggleDashNote(\'' + e.id + '\')" style="cursor:pointer;"' : "") + '>' + escHtml(trickLabel(r.trickId)) + (code ? " (" + escHtml(code) + ")" : "") + (r.nuki ? " ・抜き" : "") + (r.unnatural ? " ・アンナチュラル" : "") + (r.kakari ? " ・かかり" : "") + " " + countLabel + "</span>"; var videoBtns = r.reps !== undefined ? renderDashVideoGallery(e.id, ri, r, "single", "動画") : renderDashVideoGallery(e.id, ri, r, "success", "成功") + renderDashVideoGallery(e.id, ri, r, "fail", "失敗"); return '<div class="recent-tech-row">' + chipHtml + videoBtns + "</div>"; }).join("");
+var techChips = shownRows.map(function (r, ri) { var code = composedCode(r.trickId, r.modifier); var countLabel = (r.reps !== undefined ? r.reps + "本" : r.success + "/" + (r.success + r.fail)); var chipHtml = '<span class="recent-tech-chip"' + (r.note ? ' onclick="toggleDashRowNote(\'' + r.rowId + '\')" style="cursor:pointer;"' : "") + '>' + escHtml(trickLabel(r.trickId)) + (code ? " (" + escHtml(code) + ")" : "") + (r.nuki ? " ・抜き" : "") + (r.unnatural ? " ・アンナチュラル" : "") + (r.kakari ? " ・かかり" : "") + " " + countLabel + "</span>"; var videoBtns = r.reps !== undefined ? renderDashVideoGallery(e.id, ri, r, "single", "動画") : renderDashVideoGallery(e.id, ri, r, "success", "成功") + renderDashVideoGallery(e.id, ri, r, "fail", "失敗"); return '<div class="recent-tech-row">' + chipHtml + videoBtns + (S.dashRowNoteOpen[r.rowId] && r.note ? '<div class="tech-note-row-display">' + escHtml(r.note) + '</div>' : '') + "</div>"; }).join("");
 if (e.rows.length > 10) { techChips += '<div class="recent-tech-row"><button class="chip-btn" style="font-size:11px;padding:3px 8px;" onclick="toggleDashChips(\'' + e.id + '\')">' + (chipsExpanded ? "閉じる" : "+" + (e.rows.length - 10) + "件 もっと見る") + "</button></div>"; }
 var isEditingEntry = S.editingEntryId === e.id;
 return (
@@ -1361,6 +1376,7 @@ return (
 "</div>" +
 '<div class="recent-meta">' + (isWater ? escHtml(e.facility + " ・ " + e.kicker) : "トランポリン") + "</div>" +
 '<div class="recent-techs">' + techChips + "</div>" +
+(e.note ? '<div class="tech-note-toggle"><a href="javascript:void(0)" onclick="toggleDashNote(\'' + e.id + '\')">' + (S.dashNoteOpen[e.id] ? '－ 全体メモを閉じる' : '+ 全体メモ') + '</a></div>' : '') +
 (e.note && S.dashNoteOpen[e.id] ? '<div class="recent-note">' + escHtml(e.note) + "</div>" : "") +
 (isEditingEntry ? renderEntryEditForm(e) : "") +
 "</div>"
@@ -1612,6 +1628,7 @@ unnatural: !!r.unnatural,
 success: r.success,
 fail: r.fail,
 reps: r.reps,
+note: r.note || "",
 };
 }),
 };
@@ -1645,11 +1662,11 @@ if (!entry) return;
 var validRows;
 if (category === "trampoline") {
 validRows = S.editDraft.rows.filter(function (r) { if (r.trickId === "airtime") { return r.airtimeSeconds !== "" && r.airtimeSeconds !== undefined && Number(r.airtimeSeconds) >= 0; } return r.reps !== "" && r.reps !== undefined && Number(r.reps) >= 0; }).map(function (r) {
-return { rowId: r.rowId || genRowId(), trickId: r.trickId, trickLabel: trickLabel(r.trickId), modifier: r.modifier, nuki: !!r.nuki, unnatural: !!r.unnatural, kakari: !!r.kakari, reps: r.trickId === "airtime" ? 10 : (Number(r.reps) || 0), airtimeSeconds: r.trickId === "airtime" ? (Number(r.airtimeSeconds) || 0) : '' };
+return { rowId: r.rowId || genRowId(), trickId: r.trickId, trickLabel: trickLabel(r.trickId), modifier: r.modifier, nuki: !!r.nuki, unnatural: !!r.unnatural, kakari: !!r.kakari, reps: r.trickId === "airtime" ? 10 : (Number(r.reps) || 0), airtimeSeconds: r.trickId === "airtime" ? (Number(r.airtimeSeconds) || 0) : '', note: (r.note || "").trim() };
 });
 } else {
 validRows = S.editDraft.rows.filter(function (r) { return ((r.success !== "" && r.success !== undefined && Number(r.success) >= 0) || (r.fail !== "" && r.fail !== undefined && Number(r.fail) >= 0)); }).map(function (r) {
-return { rowId: r.rowId || genRowId(), trickId: r.trickId, trickLabel: trickLabel(r.trickId), modifier: r.modifier, nuki: !!r.nuki, unnatural: !!r.unnatural, success: Number(r.success) || 0, fail: Number(r.fail) || 0 };
+return { rowId: r.rowId || genRowId(), trickId: r.trickId, trickLabel: trickLabel(r.trickId), modifier: r.modifier, nuki: !!r.nuki, unnatural: !!r.unnatural, success: Number(r.success) || 0, fail: Number(r.fail) || 0, note: (r.note || "").trim() };
 });
 }
 if (validRows.length === 0) return;
@@ -1703,6 +1720,13 @@ render();
 });
 }
 
+function toggleEditRowNoteOpen(idx) { S.editDraft.rows[idx]._noteOpen = !S.editDraft.rows[idx]._noteOpen; render(); }
+function renderEditTechRowNoteHtml(row, idx) {
+var noteOpen = row._noteOpen || (row.note && row.note.trim());
+if (!noteOpen) { return '<div class="tech-note-toggle"><a href="javascript:void(0)" onclick="toggleEditRowNoteOpen(' + idx + ')">+ メモ</a></div>'; }
+return '<div class="tech-note-row"><textarea class="note-textarea tech-note-input" rows="2" placeholder="この技のメモ" oninput="setEditRowField(' + idx + ",'note',this.value)\" onblur=\"render()\">" + escHtml(row.note || '') + "</textarea></div>";
+}
+
 function renderEditTechRow(row, idx, category, entryId) {
 var code = composedCode(row.trickId, row.modifier);
 var countFields = category === "trampoline"
@@ -1746,6 +1770,7 @@ var nf = videosForRow(entryId, rowId, "fail").length + pendingListFor(entryId, r
 if (!ns && !nf) return "";
 return '<div class="sub-label">🎬 ' + (ns ? "成功" + ns + "本" : "") + (ns && nf ? "・" : "") + (nf ? "失敗" + nf + "本" : "") + 'の動画が添付されています(追加・削除は「ダッシュボード」の記録から行えます)</div>';
 })() +
+renderEditTechRowNoteHtml(row, idx) +
 "</div>"
 );
 }
