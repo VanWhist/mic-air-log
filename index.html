@@ -664,6 +664,9 @@ if (category === "trampoline") return { rowId: genRowId(), trickId: defaultTrick
 return { rowId: genRowId(), trickId: defaultTrick, modifier: "none", nuki: false, unnatural: false, success: "", fail: "", successVideos: [], failVideos: [] };
 }
 var S = {
+dashRecentRange: "recent",
+dashChipsExpanded: {},
+dashNoteOpen: {},
 trickUsageCount: {},
 trickLastUsed: null,
 tab: "record",
@@ -1283,6 +1286,12 @@ addHtml = '<label class="recent-video-btn' + toneClass + '" for="' + inputId + '
 }
 return pills + addHtml;
 }
+function cycleDashRange() { var order = ["recent", "week", "month", "year"]; var i = order.indexOf(S.dashRecentRange); S.dashRecentRange = order[(i + 1) % order.length]; render(); }
+function dashRangeLabel(range) { if (range === "week") return "今週"; if (range === "month") return "今月"; if (range === "year") return "今年"; return "直近"; }
+function dashRangeStart(range) { var now = new Date(); if (range === "week") { var day = now.getDay(); var diffToMonday = day === 0 ? 6 : day - 1; return new Date(now.getFullYear(), now.getMonth(), now.getDate() - diffToMonday); } if (range === "month") { return new Date(now.getFullYear(), now.getMonth(), 1); } if (range === "year") { return new Date(now.getFullYear(), 0, 1); } return null; }
+function isInDashRange(dateStr, range) { if (range === "recent") return true; var d = new Date(dateStr + "T00:00:00"); var start = dashRangeStart(range); return d >= start; }
+function toggleDashChips(entryId) { S.dashChipsExpanded[entryId] = !S.dashChipsExpanded[entryId]; render(); }
+function toggleDashNote(entryId) { S.dashNoteOpen[entryId] = !S.dashNoteOpen[entryId]; render(); }
 function renderAthleteDashboard() {
 var entries = getEntries(S.dashAthlete, S.dashCategory);
 if (entries.length === 0) {
@@ -1318,16 +1327,11 @@ var kakariLabel = (!isWater && t.kakari > 0) ? " ・かかり×" + t.kakari : ""
 return '<div class="rank-item"><span class="rank-name">' + escHtml(t.name) + '</span><div class="rank-bar-wrap"><div class="rank-bar" style="width:' + pct + '%"></div></div><span class="rank-count">' + countCap + countLabel + (trate !== null ? " ・ " + trate + "%" : "") + kakariLabel + "</span></div>";
 }).join("");
 
-var recentHtml = entries.slice().reverse().slice(0, 6).map(function (e) {
-var techChips = e.rows.map(function (r, ri) {
-var code = composedCode(r.trickId, r.modifier);
-var countLabel = r.trickId === "airtime" ? (Number(r.airtimeSeconds) || 0) + "秒" : (r.reps !== undefined ? r.reps + "本" : r.success + "/" + (r.success + r.fail));
-var chipHtml = '<span class="recent-tech-chip">' + escHtml(trickLabel(r.trickId)) + (code ? " (" + escHtml(code) + ")" : "") + (r.nuki ? " ・抜き" : "") + (r.unnatural ? " ・アンナチュラル" : "") + (r.kakari ? " ・かかり" : "") + " " + countLabel + "</span>";
-var videoBtns = r.reps !== undefined
-? renderDashVideoGallery(e.id, ri, r, "single", "動画")
-: renderDashVideoGallery(e.id, ri, r, "success", "成功") + renderDashVideoGallery(e.id, ri, r, "fail", "失敗");
-return '<div class="recent-tech-row">' + chipHtml + videoBtns + "</div>";
-}).join("");
+var recentHtml = (S.dashRecentRange === "recent" ? entries.slice().reverse().slice(0, 6) : entries.filter(function (fe) { return isInDashRange(fe.date, S.dashRecentRange); }).slice().reverse()).map(function (e) {
+var chipsExpanded = !!S.dashChipsExpanded[e.id];
+var shownRows = chipsExpanded ? e.rows : e.rows.slice(0, 10);
+var techChips = shownRows.map(function (r, ri) { var code = composedCode(r.trickId, r.modifier); var countLabel = (r.reps !== undefined ? r.reps + "本" : r.success + "/" + (r.success + r.fail)); var chipHtml = '<span class="recent-tech-chip"' + (e.note ? ' onclick="toggleDashNote(\'' + e.id + '\')" style="cursor:pointer;"' : "") + '>' + escHtml(trickLabel(r.trickId)) + (code ? " (" + escHtml(code) + ")" : "") + (r.nuki ? " ・抜き" : "") + (r.unnatural ? " ・アンナチュラル" : "") + (r.kakari ? " ・かかり" : "") + " " + countLabel + "</span>"; var videoBtns = r.reps !== undefined ? renderDashVideoGallery(e.id, ri, r, "single", "動画") : renderDashVideoGallery(e.id, ri, r, "success", "成功") + renderDashVideoGallery(e.id, ri, r, "fail", "失敗"); return '<div class="recent-tech-row">' + chipHtml + videoBtns + "</div>"; }).join("");
+if (e.rows.length > 10) { techChips += '<div class="recent-tech-row"><button class="chip-btn" style="font-size:11px;padding:3px 8px;" onclick="toggleDashChips(\'' + e.id + '\')">' + (chipsExpanded ? "閉じる" : "+" + (e.rows.length - 10) + "件 もっと見る") + "</button></div>"; }
 var isEditingEntry = S.editingEntryId === e.id;
 return (
 '<div class="recent-item">' +
@@ -1337,7 +1341,7 @@ return (
 "</div>" +
 '<div class="recent-meta">' + (isWater ? escHtml(e.facility + " ・ " + e.kicker) : "トランポリン") + "</div>" +
 '<div class="recent-techs">' + techChips + "</div>" +
-(e.note ? '<div class="recent-note">' + escHtml(e.note) + "</div>" : "") +
+(e.note && S.dashNoteOpen[e.id] ? '<div class="recent-note">' + escHtml(e.note) + "</div>" : "") +
 (isEditingEntry ? renderEntryEditForm(e) : "") +
 "</div>"
 );
@@ -1383,7 +1387,7 @@ renderTrendChartHtml("chart-total", trend, 150) +
 airtimeChartCard +
 '<div class="card"><div class="recent-title">技別 累計本数' + (isWater ? "・成功率" : "") + "</div><div class=\"rank-list\">" + rankHtml + "</div></div>" +
 renderVideoGalleryCard(entries) +
-'<div><div class="recent-title">直近の記録</div><div class="recent-list">' + recentHtml + "</div></div>" +
+'<div><div class="recent-title" style="display:flex;align-items:center;justify-content:space-between;gap:8px;"><span>直近の記録</span><button class="chip-btn" style="font-size:11px;padding:3px 8px;" onclick="cycleDashRange()">' + dashRangeLabel(S.dashRecentRange) + '</button></div><div class="recent-list">' + recentHtml + "</div></div>" +
 (isWater ? renderFacilityBreakdown(entries) : "")
 );
 }
