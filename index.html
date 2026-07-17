@@ -663,6 +663,8 @@ if (category === "trampoline") return { rowId: genRowId(), trickId: "rot_3", mod
 return { rowId: genRowId(), trickId: "rot_3", modifier: "none", nuki: false, unnatural: false, success: "", fail: "", successVideos: [], failVideos: [] };
 }
 var S = {
+trickUsageCount: {},
+trickLastUsed: null,
 tab: "record",
 athlete: "",
 category: "water",
@@ -738,7 +740,7 @@ function addTechRow() { S.rows.push(emptyTechRow(S.category)); render(); }
 function removeTechRow(idx) {
 if (S.rows.length > 1) { S.rows = S.rows.filter(function (_, i) { return i !== idx; }); render(); }
 }
-function setRowTrick(idx, v) { S.rows[idx].trickId = v; render(); }
+function setRowTrick(idx, v) { S.rows[idx].trickId = v; S.trickUsageCount[v] = (S.trickUsageCount[v] || 0) + 1; S.trickLastUsed = v; render(); }
 function setRowModifier(idx, m) { S.rows[idx].modifier = m; render(); }
 function toggleRowNuki(idx) { S.rows[idx].nuki = !S.rows[idx].nuki; render(); }
 function toggleRowUnnatural(idx) { S.rows[idx].unnatural = !S.rows[idx].unnatural; render(); }
@@ -815,14 +817,31 @@ render();
 
 /* ---- record tab render ---- */
 function renderTrickSelect(idx, row) {
-var optgroups = TRICKS.filter(function (g) { return g.group !== "エアタイム" || S.category === "trampoline"; }).map(function (g) {
+var groups = TRICKS.filter(function (g) { return g.group !== "エアタイム" || S.category === "trampoline"; });
+var allowedIds = {};
+groups.forEach(function (g) { g.items.forEach(function (t) { allowedIds[t.id] = true; }); });
+var usedIds = Object.keys(S.trickUsageCount || {}).filter(function (id) { return allowedIds[id]; });
+usedIds.sort(function (a, b) {
+if (a === S.trickLastUsed) return -1;
+if (b === S.trickLastUsed) return 1;
+return (S.trickUsageCount[b] || 0) - (S.trickUsageCount[a] || 0);
+});
+var recentHtml = "";
+if (usedIds.length > 0) {
+var recentOpts = usedIds.map(function (id) {
+var t = TRICK_INDEX[id];
+return '<option value="' + t.id + '" ' + (row.trickId === t.id ? "selected" : "") + ">" + escHtml(t.label) + (t.code ? " (" + t.code + ")" : "") + "</option>";
+}).join("");
+recentHtml = '<optgroup label="よく使う技">' + recentOpts + "</optgroup>";
+}
+var optgroups = groups.map(function (g) {
 var opts = g.items.map(function (t) {
 return '<option value="' + t.id + '" ' + (row.trickId === t.id ? "selected" : "") + ">" + escHtml(t.label) + (t.code ? " (" + t.code + ")" : "") + "</option>";
 }).join("");
 return '<optgroup label="' + escAttr(g.group) + '">' + opts + "</optgroup>";
 }).join("");
 return (
-'<div class="select-wrap"><select class="select-input" onchange="setRowTrick(' + idx + ',this.value)">' + optgroups + "</select>" +
+'<div class="select-wrap"><select class="select-input" onchange="setRowTrick(' + idx + ',this.value)">' + recentHtml + optgroups + "</select>" +
 '<span class="select-chevron">' + iconChevronDown(16, COLORS.textFaint) + "</span></div>"
 );
 }
