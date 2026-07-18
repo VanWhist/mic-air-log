@@ -623,7 +623,7 @@ render();
 });
 }).catch(function (err) {
 S.addingAthleteBusy = false;
-S.addAthleteError = "選手の登録に失敗しました。通信状況を確認してもう一度お試しください。";
+S.addAthleteError = (err && err.message) || "選手の登録に失敗しました。通信状況を確認してもう一度お試しください。";
 render();
 });
 }
