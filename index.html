@@ -71,6 +71,8 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.7); cur
 .tech-note-toggle a { color: #FFB870; font-size: 13px; text-decoration: none; }
 .tech-note-row { margin-top: 6px; }
 .tech-note-row .note-textarea { font-size: 13px; padding: 8px 10px; }
+.tech-share-check { display: flex; align-items: center; gap: 6px; margin-top: 6px; font-size: 12px; color: #8a94a6; }
+.tech-share-check input[type="checkbox"] { width: 16px; height: 16px; }
 
 .save-btn { width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 0; border-radius: 12px; font-size: 14px; font-weight: 600; border: none; cursor: pointer; background: #4CC3F0; color: #062230; }
 .save-btn.flash { background: #3FAE6A; }
@@ -697,8 +699,8 @@ render();
 /* ---- app state ---- */
 function emptyTechRow(category) {
 var defaultTrick = (typeof S !== "undefined" && S && S.trickLastUsed && (S.trickLastUsed !== "airtime" || category === "trampoline")) ? S.trickLastUsed : "rot_3";
-if (category === "trampoline") return { rowId: genRowId(), trickId: defaultTrick, modifier: "none", nuki: false, unnatural: false, note: "", kakari: false, reps: "", videos: [] };
-return { rowId: genRowId(), trickId: defaultTrick, modifier: "none", nuki: false, unnatural: false, success: "", fail: "", note: "", successVideos: [], failVideos: [] };
+if (category === "trampoline") return { rowId: genRowId(), trickId: defaultTrick, modifier: "none", nuki: false, unnatural: false, note: "", shareNote: false, kakari: false, reps: "", videos: [] };
+return { rowId: genRowId(), trickId: defaultTrick, modifier: "none", nuki: false, unnatural: false, success: "", fail: "", note: "", shareNote: false, successVideos: [], failVideos: [] };
 }
 var S = {
 dashRecentRange: "recent",
@@ -716,6 +718,7 @@ facility: FACILITIES[0].name,
 kicker: FACILITIES[0].kickers[0],
 rows: [emptyTechRow("water")],
 note: "",
+shareNote: false,
 saving: false,
 savedFlash: false,
 dashAthlete: "team",
@@ -810,7 +813,7 @@ var athleteId = S.athlete;
 var category = S.category;
 // アップロードキューに載せる動画は保存後に実行するので、送信payloadからは除いておく。
 var rowsForServer = validRows.map(function (r) {
-return { rowId: r.rowId, trickId: r.trickId, trickLabel: r.trickLabel, modifier: r.modifier, nuki: r.nuki, unnatural: r.unnatural, success: r.success, fail: r.fail, reps: r.reps, kakari: r.kakari, airtimeSeconds: r.airtimeSeconds, note: (r.note || "").trim() };
+return { rowId: r.rowId, trickId: r.trickId, trickLabel: r.trickLabel, modifier: r.modifier, nuki: r.nuki, unnatural: r.unnatural, success: r.success, fail: r.fail, reps: r.reps, kakari: r.kakari, airtimeSeconds: r.airtimeSeconds, note: (r.note || "").trim(), shareNote: r.shareNote };
 });
 // 同じ選手・種類・日付の記録がすでにあれば、サーバー側で既存の記録にまとめられる(合算)。
 var payload = {
@@ -821,6 +824,7 @@ category: S.category,
 date: S.date,
 note: S.note.trim(),
 rows: rowsForServer,
+shareNote: S.shareNote,
 };
 if (S.category === "water") { payload.facility = S.facility; payload.kicker = S.kicker; }
 apiPost(payload).then(function (result) {
@@ -831,6 +835,7 @@ touchRecentAthlete(S.athlete);
 S.saving = false;
 S.rows = [emptyTechRow(S.category)];
 S.note = "";
+S.shareNote = false;
 S.savedFlash = true;
 render();
 setTimeout(function () { S.savedFlash = false; render(); }, 1600);
@@ -941,7 +946,7 @@ function toggleRowNoteOpen(idx) { S.rows[idx]._noteOpen = !S.rows[idx]._noteOpen
 function renderTechRowNoteHtml(row, idx) {
 var noteOpen = row._noteOpen || (row.note && row.note.trim());
 if (!noteOpen) { return '<div class="tech-note-toggle"><a href="javascript:void(0)" onclick="toggleRowNoteOpen(' + idx + ')">+ メモ</a></div>'; }
-return '<div class="tech-note-row"><textarea class="note-textarea tech-note-input" rows="2" placeholder="この技のメモ" oninput="setRowField(' + idx + ",'note',this.value)\" onblur=\"render()\">" + escHtml(row.note || '') + "</textarea></div>";
+return '<div class="tech-note-row"><textarea class="note-textarea tech-note-input" rows="2" placeholder="この技のメモ" oninput="setRowField(' + idx + ",'note',this.value)\" onblur=\"render()\">" + escHtml(row.note || '') + '</textarea><label class="tech-share-check"><input type="checkbox" onchange="setRowField(' + idx + ",'shareNote',this.checked)\"" + (row.shareNote ? ' checked' : '') + '> コーチにも共有</label></div>';
 }
 
 function renderTechRow(row, idx) {
@@ -1046,7 +1051,7 @@ return (
 ) +
 '<div><label class="field-label">技ログ</label><div class="tech-row-list">' + rowsHtml + "</div>" +
 '<button class="add-row-btn" onclick="addTechRow()">' + iconPlus(14, COLORS.ice) + " 技を追加</button></div>" +
-'<div><label class="field-label">メモ(任意)</label><textarea class="note-textarea" rows="2" placeholder="感覚、風向き、恐怖心など" oninput="setNote(this.value)">' + escHtml(S.note) + "</textarea></div>" +
+'<div><label class="field-label">メモ(任意)</label><textarea class="note-textarea" rows="2" placeholder="感覚、風向き、恐怖心など" oninput="setNote(this.value)">' + escHtml(S.note) + '</textarea><label class="tech-share-check"><input type="checkbox" onchange="S.shareNote=this.checked" ' + (S.shareNote ? "checked" : "") + '> コーチにも共有</label></div>' +
 '<button class="save-btn ' + (S.savedFlash ? "flash" : "") + '" onclick="saveEntry()" ' + (S.saving ? "disabled" : "") + '>' + saveBtnInner + "</button>" +
 (S.bgUpload ? '<div class="save-note">🎬 動画をアップロード中… (' + S.bgUpload.done + '/' + S.bgUpload.total + ')</div>' : "") +
 (S.saveError ? '<div style="color:' + COLORS.amber + ';font-size:12px;margin-top:8px;">' + escHtml(S.saveError) + "</div>" : "") +
