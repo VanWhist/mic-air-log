@@ -297,7 +297,7 @@ if (!item.file) { done(); return; }
 item.status = "uploading";
 item.progress = 0;
 render();
-uploadVideoFile(item.file, item.entryId, item.rowId, item.trickId, item.type, item.athleteId, function (pct) {
+uploadVideoFile(item.file, item.entryId, item.rowId, item.trickId, item.type, item.athleteId, item.date, item.trickLabel, function (pct) {
 item.progress = pct;
 render();
 }).then(function () {
@@ -335,7 +335,7 @@ reader.readAsDataURL(file.slice(start, end));
 });
 }
 
-function uploadVideoFile(file, entryId, rowId, trickId, type, athleteId, onProgress) {
+function uploadVideoFile(file, entryId, rowId, trickId, type, athleteId, date, trickLabel, onProgress) {
 var totalSize = file.size;
 var sessionId = null;
 var offset = 0;
@@ -358,6 +358,8 @@ videoType: type || "",
 athleteId: athleteId || "",
 athleteName: athleteName(athleteId) || "",
 fileName: file.name || "video.mp4",
+date: date || "",
+trickLabel: trickLabel || "",
 }).then(function (finishRes) {
 if (!finishRes || finishRes.status !== "ok") throw new Error("upload finish failed");
 if (onProgress) onProgress(100);
@@ -450,7 +452,7 @@ var existingCount = videosForRow(entryId, rowId, type).length + pendingListFor(e
 var newItems = [];
 fileList.forEach(function (file) {
 if (existingCount + newItems.length >= cap) return;
-newItems.push({ id: nextVideoItemId(), entryId: entryId, rowId: rowId, trickId: trickId, type: type, athleteId: entry.athlete, name: file.name, url: URL.createObjectURL(file), status: "pending", progress: 0, file: file });
+newItems.push({ id: nextVideoItemId(), entryId: entryId, rowId: rowId, trickId: trickId, type: type, athleteId: entry.athlete, date: entry.date, trickLabel: trickLabel(trickId), name: file.name, url: URL.createObjectURL(file), status: "pending", progress: 0, file: file });
 });
 if (newItems.length) { addPendingItems(entryId, rowId, type, newItems); render(); enqueueVideoUploads(newItems); }
 else render();
@@ -850,6 +852,8 @@ item.rowId = r.rowId;
 item.trickId = r.trickId;
 item.type = group.type;
 item.athleteId = athleteId;
+item.date = S.date;
+item.trickLabel = r.trickLabel;
 queueItems.push(item);
 addPendingItems(entryId, r.rowId, group.type, [item]);
 });
