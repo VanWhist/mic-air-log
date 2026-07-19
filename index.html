@@ -486,6 +486,10 @@ return f ? f.kickers : [];
 var TRICKS = [
 { group: "ストレートジャンプ", items: [
 { id: "straight_jump", label: "ストレートジャンプ", code: null },
+{ id: "side_jump", label: "体側ジャンプ", code: null, trampolineOnly: true },
+{ id: "hand_set_jump", label: "手決めジャンプ", code: null, trampolineOnly: true },
+{ id: "tuck_jump", label: "タックジャンプ", code: null, trampolineOnly: true },
+{ id: "pike_jump", label: "パイクジャンプ", code: null, trampolineOnly: true },
 ]},
 { group: "回転系", items: [
 { id: "rot_3", label: "360", code: "3" },
@@ -499,16 +503,16 @@ var TRICKS = [
 { id: "oax_14", label: "オフアクシス1440", code: "14o" },
 ]},
 { group: "宙返り系", items: [
+{ id: "inv_bc", label: "バックフリップ", code: "b" },
 { id: "inv_bt", label: "バックタック", code: "bT" },
 { id: "inv_bp", label: "バックパイク", code: "bP" },
 { id: "inv_bl", label: "バックレイアウト", code: "bL" },
-{ id: "inv_bc", label: "バッククロス", code: "bp" },
 { id: "inv_bf", label: "バックフル", code: "bF" },
 { id: "inv_bdf", label: "バックダブルフル", code: "bdF" },
 { id: "inv_btf", label: "バックトリプルフル", code: "btF" },
+{ id: "inv_fc", label: "フロントフリップ", code: "f" },
 { id: "inv_ft", label: "フロントタック", code: "fT" },
 { id: "inv_fp", label: "フロントパイク", code: "fP" },
-{ id: "inv_fc", label: "フロントクロス", code: "bp" },
 { id: "inv_ff", label: "フロントフル", code: "fF" },
 ]},
 { group: "ループ", items: [
@@ -871,7 +875,7 @@ render();
 function renderTrickSelect(idx, row) {
 var groups = TRICKS.filter(function (g) { return g.group !== "エアタイム" || S.category === "trampoline"; });
 var allowedIds = {};
-groups.forEach(function (g) { g.items.forEach(function (t) { allowedIds[t.id] = true; }); });
+groups.forEach(function (g) { g.items.forEach(function (t) { if (!t.trampolineOnly || S.category === "trampoline") allowedIds[t.id] = true; }); });
 var usedIds = Object.keys(S.trickUsageCount || {}).filter(function (id) { return allowedIds[id]; });
 usedIds.sort(function (a, b) {
 if (a === S.trickLastUsed) return -1;
@@ -887,7 +891,7 @@ return '<option value="' + t.id + '" ' + (row.trickId === t.id ? "selected" : ""
 recentHtml = '<optgroup label="よく使う技">' + recentOpts + "</optgroup>";
 }
 var optgroups = groups.map(function (g) {
-var opts = g.items.map(function (t) {
+var opts = g.items.filter(function (t) { return !t.trampolineOnly || S.category === "trampoline"; }).map(function (t) {
 return '<option value="' + t.id + '" ' + (row.trickId === t.id ? "selected" : "") + ">" + escHtml(t.label) + (t.code ? " (" + t.code + ")" : "") + "</option>";
 }).join("");
 return '<optgroup label="' + escAttr(g.group) + '">' + opts + "</optgroup>";
@@ -1542,7 +1546,7 @@ return (
 
 function renderTeamTrickSelect() {
 var optgroups = TRICKS.filter(function (g) { return g.group !== "エアタイム"; }).map(function (g) {
-var opts = g.items.map(function (t) {
+var opts = g.items.filter(function (t) { return !t.trampolineOnly || S.dashCategory === "trampoline"; }).map(function (t) {
 return '<option value="' + t.id + '" ' + (S.teamRankTrick === t.id ? "selected" : "") + ">" + escHtml(t.label) + (t.code ? " (" + t.code + ")" : "") + "</option>";
 }).join("");
 return '<optgroup label="' + escAttr(g.group) + '">' + opts + "</optgroup>";
@@ -1762,7 +1766,7 @@ return '<button class="chip-btn ' + (isGrabLetter ? "amber " : "") + (row.modifi
 var nukiChip = '<button class="chip-btn ' + (row.nuki ? "active" : "") + '" style="flex:1;font-size:10px;padding:8px 3px;" onclick="toggleEditRowNuki(' + idx + ')">抜き</button>';
 var unnaturalChip = '<button class="chip-btn ' + (row.unnatural ? "active" : "") + '" style="flex:1;font-size:10px;padding:8px 3px;" onclick="toggleEditRowUnnatural(' + idx + ')">アンナチュラル</button>';
 var optgroups = TRICKS.filter(function (g) { return g.group !== "エアタイム" || category === "trampoline"; }).map(function (g) {
-var opts = g.items.map(function (t) {
+var opts = g.items.filter(function (t) { return !t.trampolineOnly || category === "trampoline"; }).map(function (t) {
 return '<option value="' + t.id + '" ' + (row.trickId === t.id ? "selected" : "") + ">" + escHtml(t.label) + (t.code ? " (" + t.code + ")" : "") + "</option>";
 }).join("");
 return '<optgroup label="' + escAttr(g.group) + '">' + opts + "</optgroup>";
