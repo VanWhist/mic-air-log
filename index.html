@@ -104,7 +104,7 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.7); cur
 .recent-techs { font-size: 13px; margin-top: 4px; display: flex; flex-direction: column; gap: 6px; }
 .recent-tech-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
 .recent-tech-chip { font-size: 11px; background: #1B2C42; border: 1px solid #26374E; border-radius: 6px; padding: 3px 7px; }
-.recent-tech-chip.has-note { background: rgba(255,184,112,0.14); border: 1px solid #FFB870; }
+.recent-tech-chip.has-note { background: rgba(255,184,112,0.14); border: 1px solid #FFB870; } .detail-btn { display:inline-flex; align-items:center; gap:3px; font-size:10px; font-weight:600; padding:3px 7px; border-radius:6px; background:#26374E; border:1px solid #37506E; color:#C7D6E5; margin-left:6px; } .detail-btn.open { background:#4CC3F0; color:#062230; border-color:#4CC3F0; } .merge-bar-wrap { height:5px; border-radius:3px; background:#0F1929; overflow:hidden; margin-top:6px; } .merge-bar { height:100%; border-radius:3px; }
 .recent-note { font-size: 11px; margin-top: 4px; color: #5C7086; }
 .tech-note-row-display { font-size: 11px; margin-top: 2px; margin-bottom: 4px; color: #5C7086; padding-left: 2px; }
 .video-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px; }
@@ -710,7 +710,7 @@ return { rowId: genRowId(), trickId: defaultTrick, modifier: "none", nuki: false
 }
 var S = {
 dashRecentRange: "recent",
-dashChipsExpanded: {},
+dashChipsExpanded: {},dashGroupOpen: {},
 dashNoteOpen: {},dashRowNoteOpen: {},refreshing: false,
 refreshError: "",
 
@@ -1200,9 +1200,14 @@ var x = xAt(i) - barW / 2, yTop = yCount(v), h = (m.top + plotH) - yTop;
 barsHtml += '<rect x="' + x.toFixed(1) + '" y="' + yTop.toFixed(1) + '" width="' + barW.toFixed(1) + '" height="' + Math.max(h, 0).toFixed(1) + '" rx="3"/>';
 var labelInside = h >= 16;
 var ly = labelInside ? (yTop + h / 2) : (yTop - 6);
-countLabelsHtml += '<text x="' + xAt(i).toFixed(1) + '" y="' + ly.toFixed(1) + '" text-anchor="middle" dominant-baseline="central" font-size="10.5" font-weight="700" fill="' + (labelInside ? "#EAF1F8" : COLORS.textFaint) + '">' + v + "</text>";
+var labelText = String(v);
+if (!labelInside) {
+var pillW = Math.max(16, labelText.length * 7 + 6);
+countLabelsHtml += '<rect x="' + (xAt(i) - pillW / 2).toFixed(1) + '" y="' + (ly - 7).toFixed(1) + '" width="' + pillW.toFixed(1) + '" height="14" rx="7" fill="#0B1420" opacity="0.85"/>';
+}
+countLabelsHtml += '<text x="' + xAt(i).toFixed(1) + '" y="' + ly.toFixed(1) + '" text-anchor="middle" dominant-baseline="central" font-size="10.5" font-weight="700" fill="#EAF1F8">' + v + "</text>";
 });
-svg += '<g fill="' + COLORS.ice + '" opacity="0.55">' + barsHtml + "</g>" + countLabelsHtml;
+svg += '<g fill="' + COLORS.ice + '" opacity="0.55">' + barsHtml + "</g>";
 
 /* success-rate dashed line + circles (amber, right axis) */
 var linePts = "", started = false;
@@ -1221,6 +1226,7 @@ var x = xAt(i), y = yPct(v);
 svg += '<circle cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="' + r.toFixed(1) + '" fill="' + COLORS.amber + '" stroke="#0B1420" stroke-width="2"/>';
 svg += '<text x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" text-anchor="middle" dominant-baseline="central" font-size="9.5" font-weight="700" fill="#23140A">' + v + "%</text>";
 });
+svg += countLabelsHtml;
 
 /* hover hit areas */
 data.forEach(function (pt, i) {
@@ -1350,7 +1356,7 @@ function cycleDashRange() { var order = ["recent", "week", "month", "year"]; var
 function dashRangeLabel(range) { if (range === "week") return "今週"; if (range === "month") return "今月"; if (range === "year") return "今年"; return "直近"; }
 function dashRangeStart(range) { var now = new Date(); if (range === "week") { var day = now.getDay(); var diffToMonday = day === 0 ? 6 : day - 1; return new Date(now.getFullYear(), now.getMonth(), now.getDate() - diffToMonday); } if (range === "month") { return new Date(now.getFullYear(), now.getMonth(), 1); } if (range === "year") { return new Date(now.getFullYear(), 0, 1); } return null; }
 function isInDashRange(dateStr, range) { if (range === "recent") return true; var d = new Date(dateStr + "T00:00:00"); var start = dashRangeStart(range); return d >= start; }
-function toggleDashChips(entryId) { S.dashChipsExpanded[entryId] = !S.dashChipsExpanded[entryId]; render(); }
+function toggleDashChips(entryId) { S.dashChipsExpanded[entryId] = !S.dashChipsExpanded[entryId]; render(); } function toggleDashGroup(id) { S.dashGroupOpen[id] = !S.dashGroupOpen[id]; render(); }
 function toggleDashNote(entryId) { S.dashNoteOpen[entryId] = !S.dashNoteOpen[entryId]; render(); }
 function toggleDashRowNote(rowId) { S.dashRowNoteOpen[rowId] = !S.dashRowNoteOpen[rowId]; render(); }
 function renderAthleteDashboard() {
@@ -1391,8 +1397,45 @@ return '<div class="rank-item"><span class="rank-name">' + escHtml(t.name) + '</
 var recentHtml = (S.dashRecentRange === "recent" ? entries.slice().reverse().slice(0, 6) : entries.filter(function (fe) { return isInDashRange(fe.date, S.dashRecentRange); }).slice().reverse()).map(function (e) {
 var chipsExpanded = !!S.dashChipsExpanded[e.id];
 var shownRows = chipsExpanded ? e.rows : e.rows.slice(0, 10);
-var techChips = shownRows.map(function (r, ri) { var code = composedCode(r.trickId, r.modifier); var countLabel = (r.reps !== undefined ? r.reps + "本" : r.success + "/" + (r.success + r.fail)); var chipHtml = '<span class="recent-tech-chip' + (r.note ? ' has-note' : '') + '"' + (r.note ? ' onclick="toggleDashRowNote(\'' + r.rowId + '\')" style="cursor:pointer;"' : "") + '>' + (r.note ? "📝 " : "") + escHtml(trickLabel(r.trickId)) + (code ? " (" + escHtml(code) + ")" : "") + (r.nuki ? " ・抜き" : "") + (r.unnatural ? " ・アンナチュラル" : "") + (r.kakari ? " ・かかり" : "") + " " + countLabel + "</span>"; var videoBtns = r.reps !== undefined ? renderDashVideoGallery(e.id, ri, r, "single", "動画") : renderDashVideoGallery(e.id, ri, r, "success", "成功") + renderDashVideoGallery(e.id, ri, r, "fail", "失敗"); return '<div class="recent-tech-row">' + chipHtml + videoBtns + (S.dashRowNoteOpen[r.rowId] && r.note ? '<div class="tech-note-row-display">' + escHtml(r.note) + '</div>' : '') + "</div>"; }).join("");
-if (e.rows.length > 10) { techChips += '<div class="recent-tech-row"><button class="chip-btn" style="font-size:11px;padding:3px 8px;" onclick="toggleDashChips(\'' + e.id + '\')">' + (chipsExpanded ? "閉じる" : "+" + (e.rows.length - 10) + "件 もっと見る") + "</button></div>"; }
+var groupOrder = [], groupMap = {};
+shownRows.forEach(function (r, ri) {
+var code = composedCode(r.trickId, r.modifier);
+var key = r.trickId + "|" + (code || "") + "|" + (r.nuki ? 1 : 0) + "|" + (r.unnatural ? 1 : 0);
+if (!groupMap[key]) { groupMap[key] = { trickId: r.trickId, code: code, nuki: r.nuki, unnatural: r.unnatural, reps: 0, success: 0, fail: 0, kakari: 0, isReps: r.reps !== undefined, items: [] }; groupOrder.push(key); }
+var grp = groupMap[key];
+if (r.reps !== undefined) { grp.reps += Number(r.reps) || 0; } else { grp.success += Number(r.success) || 0; grp.fail += Number(r.fail) || 0; }
+if (r.kakari) grp.kakari += 1;
+grp.items.push({ row: r, ri: ri });
+});
+var techChips = groupOrder.map(function (key, gi) {
+var grp = groupMap[key];
+var notesInGroup = grp.items.map(function (it) { return it.row.note; }).filter(Boolean);
+var uniqueNotes = notesInGroup.filter(function (n, ni) { return notesInGroup.indexOf(n) === ni; });
+var hasNote = notesInGroup.length > 0;
+var gid = e.id + "-g" + gi;
+var isOpen = !!S.dashGroupOpen[gid];
+var countLabel = grp.isReps ? (grp.reps + "本") : (grp.success + "/" + (grp.success + grp.fail));
+var rate = (!grp.isReps && (grp.success + grp.fail) > 0) ? Math.round((grp.success / (grp.success + grp.fail)) * 100) : null;
+var rateColor = rate === null ? COLORS.ice : (rate >= 70 ? COLORS.ice : (rate >= 40 ? COLORS.amber : "#E5484D"));
+var countBadge = grp.items.length > 1 ? ('<span style="font-size:9px;color:' + COLORS.textFaint + ';margin-left:4px;">(' + grp.items.length + "件を合算)</span>") : "";
+var kakariLabel = grp.kakari > 0 ? " ・かかり×" + grp.kakari : "";
+var detailBtn = '<span class="detail-btn' + (isOpen ? " open" : "") + '">内訳<span class="chevron" style="display:inline-block;transition:transform .15s ease;transform:' + (isOpen ? "rotate(90deg)" : "rotate(0deg)") + '">▸</span></span>';
+var notePreview = (!isOpen && hasNote) ? ('<div class="tech-note-row-display">' + (uniqueNotes.length === 1 ? "📝 " + escHtml(uniqueNotes[0]) : "📝 メモ " + uniqueNotes.length + "件") + "</div>") : "";
+var barHtml = !grp.isReps ? ('<div class="merge-bar-wrap"><div class="merge-bar" style="width:' + (rate || 0) + "%;background:" + rateColor + ';"></div></div>') : "";
+var head = '<div class="recent-tech-row" onclick="toggleDashGroup(\'' + gid + '\')" style="cursor:pointer;">' +
+'<span class="recent-tech-chip' + (hasNote ? " has-note" : "") + '">' + (hasNote ? "📝 " : "") + escHtml(trickLabel(grp.trickId)) + (grp.code ? " (" + escHtml(grp.code) + ")" : "") + (grp.nuki ? " ・抜き" : "") + (grp.unnatural ? " ・アンナチュラル" : "") + kakariLabel + countBadge + " " + detailBtn + "</span>" +
+'<span style="font-family:ui-monospace,monospace;font-weight:700;color:' + rateColor + ';">' + (rate !== null ? rate + "% " : "") + countLabel + "</span>" +
+"</div>" + barHtml + notePreview;
+var detailHtml = isOpen ? ('<div class="group-detail" style="margin-top:6px;padding:8px 8px 2px;border-radius:8px;background:#0F1929;border:1px dashed #26374E;">' + grp.items.map(function (it) {
+var r = it.row, ri = it.ri;
+var code2 = composedCode(r.trickId, r.modifier);
+var countLabel2 = (r.reps !== undefined ? r.reps + "本" : r.success + "/" + (r.success + r.fail));
+var chipHtml = '<span class="recent-tech-chip' + (r.note ? " has-note" : "") + '"' + (r.note ? (' onclick="toggleDashRowNote(\'' + r.rowId + '\')" style="cursor:pointer;"') : "") + '>' + (r.note ? "📝 " : "") + escHtml(trickLabel(r.trickId)) + (code2 ? " (" + escHtml(code2) + ")" : "") + (r.nuki ? " ・抜き" : "") + (r.unnatural ? " ・アンナチュラル" : "") + (r.kakari ? " ・かかり" : "") + " " + countLabel2 + "</span>";
+var videoBtns = r.reps !== undefined ? renderDashVideoGallery(e.id, ri, r, "single", "動画") : renderDashVideoGallery(e.id, ri, r, "success", "成功") + renderDashVideoGallery(e.id, ri, r, "fail", "失敗");
+return '<div class="recent-tech-row">' + chipHtml + videoBtns + (S.dashRowNoteOpen[r.rowId] && r.note ? ('<div class="tech-note-row-display">' + escHtml(r.note) + "</div>") : "") + "</div>";
+}).join("") + "</div>") : "";
+return head + detailHtml;
+}).join("");if (e.rows.length > 10) { techChips += '<div class="recent-tech-row"><button class="chip-btn" style="font-size:11px;padding:3px 8px;" onclick="toggleDashChips(\'' + e.id + '\')">' + (chipsExpanded ? "閉じる" : "+" + (e.rows.length - 10) + "件 もっと見る") + "</button></div>"; }
 var isEditingEntry = S.editingEntryId === e.id;
 return (
 '<div class="recent-item">' +
