@@ -548,6 +548,16 @@ var MODIFIERS = [
 { id: "G", label: "G" },
 { id: "g", label: "g" },
 ];
+var SPEED_LEVELS = [
+{ key: "slow", label: "遅い", hint: "1エアより", color: "#8CA0B8" },
+{ key: "normal", label: "普通", hint: "", color: "#4CC3F0" },
+{ key: "fast", label: "速い", hint: "2エアより", color: "#FF9645" },
+{ key: "max", label: "限界", hint: "", color: "#E5484D" },
+];
+function speedLevelLabel(key) {
+var lv = SPEED_LEVELS.filter(function (x) { return x.key === key; })[0];
+return lv ? lv.label + (lv.hint ? "（" + lv.hint + "）" : "") : key;
+}
 function modifierLabel(id) {
 var m = MODIFIERS.filter(function (x) { return x.id === id; })[0];
 return m ? m.label : id;
@@ -706,11 +716,11 @@ render();
 function emptyTechRow(category) {
 var defaultTrick = (typeof S !== "undefined" && S && S.trickLastUsed && (S.trickLastUsed !== "airtime" || category === "trampoline")) ? S.trickLastUsed : "rot_3";
 if (category === "trampoline") return { rowId: genRowId(), trickId: defaultTrick, modifier: "none", nuki: false, unnatural: false, note: "", shareNote: false, kakari: false, reps: "", videos: [] };
-return { rowId: genRowId(), trickId: defaultTrick, modifier: "none", nuki: false, unnatural: false, success: "", fail: "", note: "", shareNote: false, successVideos: [], failVideos: [] };
+return { rowId: genRowId(), trickId: defaultTrick, modifier: "none", nuki: false, unnatural: false, success: "", fail: "", note: "", shareNote: false, successVideos: [], failVideos: [], speedLevel: "normal" };
 }
 var S = {
 dashRecentRange: "recent",
-dashChipsExpanded: {},dashGroupOpen: {},
+dashChipsExpanded: {},dashGroupOpen: {},dashRankOpen: {},
 dashNoteOpen: {},dashRowNoteOpen: {},refreshing: false,
 refreshError: "",
 
@@ -794,6 +804,7 @@ if (S.rows.length > 1) { S.rows = S.rows.filter(function (_, i) { return i !== i
 }
 function setRowTrick(idx, v) { S.rows[idx].trickId = v; S.trickUsageCount[v] = (S.trickUsageCount[v] || 0) + 1; S.trickLastUsed = v; render(); }
 function setRowModifier(idx, m) { S.rows[idx].modifier = m; render(); }
+function setRowSpeed(idx, v) { S.rows[idx].speedLevel = v; render(); }
 function toggleRowNuki(idx) { S.rows[idx].nuki = !S.rows[idx].nuki; render(); }
 function toggleRowUnnatural(idx) { S.rows[idx].unnatural = !S.rows[idx].unnatural; render(); }
 function toggleRowKakari(idx) { S.rows[idx].kakari = !S.rows[idx].kakari; render(); }
@@ -808,7 +819,7 @@ return { rowId: r.rowId, note: r.note, trickId: r.trickId, trickLabel: trickLabe
 });
 } else {
 validRows = S.rows.filter(function (r) { return ((r.success !== "" && Number(r.success) >= 0) || (r.fail !== "" && Number(r.fail) >= 0)); }).map(function (r) {
-return { rowId: r.rowId, note: r.note, trickId: r.trickId, trickLabel: trickLabel(r.trickId), modifier: r.modifier, nuki: !!r.nuki, unnatural: !!r.unnatural, success: Number(r.success) || 0, fail: Number(r.fail) || 0, _videoFiles: [{ type: "success", items: (r.successVideos || []).filter(function (v) { return v.file; }) }, { type: "fail", items: (r.failVideos || []).filter(function (v) { return v.file; }) }] };
+return { rowId: r.rowId, note: r.note, trickId: r.trickId, trickLabel: trickLabel(r.trickId), modifier: r.modifier, nuki: !!r.nuki, unnatural: !!r.unnatural, success: Number(r.success) || 0, fail: Number(r.fail) || 0, speedLevel: r.speedLevel || "normal", _videoFiles: [{ type: "success", items: (r.successVideos || []).filter(function (v) { return v.file; }) }, { type: "fail", items: (r.failVideos || []).filter(function (v) { return v.file; }) }] };
 });
 }
 if (validRows.length === 0) return;
@@ -819,7 +830,7 @@ var athleteId = S.athlete;
 var category = S.category;
 // アップロードキューに載せる動画は保存後に実行するので、送信payloadからは除いておく。
 var rowsForServer = validRows.map(function (r) {
-return { rowId: r.rowId, trickId: r.trickId, trickLabel: r.trickLabel, modifier: r.modifier, nuki: r.nuki, unnatural: r.unnatural, success: r.success, fail: r.fail, reps: r.reps, kakari: r.kakari, airtimeSeconds: r.airtimeSeconds, note: (r.note || "").trim(), shareNote: r.shareNote };
+return { rowId: r.rowId, trickId: r.trickId, trickLabel: r.trickLabel, modifier: r.modifier, nuki: r.nuki, unnatural: r.unnatural, success: r.success, fail: r.fail, reps: r.reps, kakari: r.kakari, airtimeSeconds: r.airtimeSeconds, speedLevel: r.speedLevel, note: (r.note || "").trim(), shareNote: r.shareNote };
 });
 // 同じ選手・種類・日付の記録がすでにあれば、サーバー側で既存の記録にまとめられる(合算)。
 var payload = {
@@ -957,6 +968,14 @@ if (!noteOpen) { return '<div class="tech-note-toggle"><a href="javascript:void(
 return '<div class="tech-note-row"><textarea class="note-textarea tech-note-input" rows="2" placeholder="この技のメモ" oninput="setRowField(' + idx + ",'note',this.value)\" onblur=\"render()\">" + escHtml(row.note || '') + '</textarea><label class="tech-share-check"><input type="checkbox" onchange="setRowField(' + idx + ",'shareNote',this.checked)\"" + (row.shareNote ? ' checked' : '') + '> コーチにも共有</label></div>';
 }
 
+function renderSpeedSelectHtml(idx, row, setterFnName) {
+var pills = SPEED_LEVELS.map(function (lv) {
+var active = (row.speedLevel || "normal") === lv.key;
+return '<button type="button" class="chip-btn' + (active ? " active" : "") + '" style="flex:1;font-size:11px;padding:8px 3px;" onclick="' + setterFnName + "(" + idx + ",'" + lv.key + "')\">" + escHtml(lv.label) + '<span style="display:block;font-size:8px;font-weight:400;opacity:.75;">' + (lv.hint ? escHtml(lv.hint) : " ") + "</span></button>";
+}).join("");
+return '<div class="sub-label" style="margin-top:8px;">進入スピード</div><div class="inline-row">' + pills + "</div>";
+}
+
 function renderTechRow(row, idx) {
 var code = composedCode(row.trickId, row.modifier);
 if (row.trickId === "airtime") {
@@ -996,6 +1015,7 @@ renderTrickSelect(idx, row) +
 '<div class="inline-row">' + nukiChip + unnaturalChip + kakariChip + "</div>" +
 '<div class="sub-label">「抜き」は台の踏切を抜いて飛ぶデュアルモーグル練習用、「アンナチュラル」は通常と逆回転で行う技。どちらもグラブ・ポジション/G/gや、お互いと組み合わせて選択できます。</div>' +
 '<div class="inline-row">' + countFields + "</div>" +
+(S.category === "trampoline" ? "" : renderSpeedSelectHtml(idx, row, "setRowSpeed")) +
 (S.category === "trampoline"
 ? '<div class="video-row single">' + renderVideoSlot(idx, "single", "動画(任意)") + "</div>"
 : '<div class="video-row">' + renderVideoSlot(idx, "success", "成功動画(任意)") + renderVideoSlot(idx, "fail", "失敗動画(任意)") + "</div>"
@@ -1085,14 +1105,43 @@ var map = {};
 entries.forEach(function (e) {
 e.rows.forEach(function (r) {
 var key = trickLabel(r.trickId) + (r.nuki ? "（抜き）" : "") + (r.unnatural ? "（アンナチュラル）" : "");
-if (!map[key]) map[key] = { count: 0, success: 0, kakari: 0 };
+if (!map[key]) map[key] = { count: 0, success: 0, kakari: 0, speed: {} };
 map[key].count += rowTotal(r);
 var s = rowSuccess(r);
 if (s !== null) map[key].success += s;
 if (r.kakari) map[key].kakari += 1;
+if (r.speedLevel) {
+if (!map[key].speed[r.speedLevel]) map[key].speed[r.speedLevel] = { success: 0, fail: 0 };
+map[key].speed[r.speedLevel].success += Number(r.success) || 0;
+map[key].speed[r.speedLevel].fail += Number(r.fail) || 0;
+}
 });
 });
-return Object.keys(map).map(function (k) { return { name: k, count: map[k].count, success: map[k].success, kakari: map[k].kakari }; }).sort(function (a, b) { return b.count - a.count; });
+return Object.keys(map).map(function (k) { return { name: k, count: map[k].count, success: map[k].success, kakari: map[k].kakari, speed: map[k].speed }; }).sort(function (a, b) { return b.count - a.count; });
+}
+function speedTotalsAggregate(totals) {
+var agg = {};
+SPEED_LEVELS.forEach(function (lv) { agg[lv.key] = { success: 0, fail: 0 }; });
+totals.forEach(function (t) {
+SPEED_LEVELS.forEach(function (lv) {
+var d = t.speed[lv.key];
+if (d) { agg[lv.key].success += d.success; agg[lv.key].fail += d.fail; }
+});
+});
+return agg;
+}
+function renderSpeedBreakdownHtml(speedMap) {
+return SPEED_LEVELS.map(function (lv) {
+var d = speedMap[lv.key] || { success: 0, fail: 0 };
+var total = d.success + d.fail;
+var rate = total > 0 ? Math.round((d.success / total) * 100) : null;
+var pct = total > 0 ? Math.round((d.success / total) * 100) : 0;
+return '<div class="speed-detail-row" style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">' +
+'<div style="font-size:10.5px;width:104px;flex-shrink:0;color:#C7D6E5;">' + escHtml(lv.label) + (lv.hint ? '（' + escHtml(lv.hint) + '）' : '') + '</div>' +
+'<div style="flex:1;height:7px;border-radius:4px;background:#1B2C42;overflow:hidden;"><div style="height:100%;border-radius:4px;width:' + pct + '%;background:' + lv.color + ';"></div></div>' +
+'<div style="font-size:10px;font-family:ui-monospace,monospace;width:64px;text-align:right;flex-shrink:0;color:#8CA0B8;">' + (rate === null ? "-" : rate + "%") + " " + d.success + "/" + total + '</div>' +
+"</div>";
+}).join("");
 }
 function daysByCategory(athleteId) {
 var water = getEntries(athleteId, "water");
@@ -1357,6 +1406,7 @@ function dashRangeLabel(range) { if (range === "week") return "今週"; if (rang
 function dashRangeStart(range) { var now = new Date(); if (range === "week") { var day = now.getDay(); var diffToMonday = day === 0 ? 6 : day - 1; return new Date(now.getFullYear(), now.getMonth(), now.getDate() - diffToMonday); } if (range === "month") { return new Date(now.getFullYear(), now.getMonth(), 1); } if (range === "year") { return new Date(now.getFullYear(), 0, 1); } return null; }
 function isInDashRange(dateStr, range) { if (range === "recent") return true; var d = new Date(dateStr + "T00:00:00"); var start = dashRangeStart(range); return d >= start; }
 function toggleDashChips(entryId) { S.dashChipsExpanded[entryId] = !S.dashChipsExpanded[entryId]; render(); } function toggleDashGroup(id) { S.dashGroupOpen[id] = !S.dashGroupOpen[id]; render(); }
+function toggleDashRank(id) { S.dashRankOpen[id] = !S.dashRankOpen[id]; render(); }
 function toggleDashNote(entryId) { S.dashNoteOpen[entryId] = !S.dashNoteOpen[entryId]; render(); }
 function toggleDashRowNote(rowId) { S.dashRowNoteOpen[rowId] = !S.dashRowNoteOpen[rowId]; render(); }
 function renderAthleteDashboard() {
@@ -1391,8 +1441,15 @@ var trate = isWater && t.count > 0 ? Math.round((t.success / t.count) * 100) : n
 var countLabel = isWater ? (t.success + "/" + t.count + "本") : (t.count + "本");
 var countCap = isWater ? '<span class="rank-count-cap">成功/本数</span>' : "";
 var kakariLabel = (!isWater && t.kakari > 0) ? " ・かかり×" + t.kakari : "";
-return '<div class="rank-item"><span class="rank-name">' + escHtml(t.name) + '</span><div class="rank-bar-wrap"><div class="rank-bar" style="width:' + pct + '%"></div></div><span class="rank-count">' + countCap + countLabel + (trate !== null ? " ・ " + trate + "%" : "") + kakariLabel + "</span></div>";
+var hasSpeedData = isWater && Object.keys(t.speed).some(function (k) { var d = t.speed[k]; return (d.success + d.fail) > 0; });
+var rankId = "rank-" + encodeURIComponent(t.name);
+var isOpen = hasSpeedData && !!S.dashRankOpen[rankId];
+var chevron = hasSpeedData ? (' <span class="chevron" style="display:inline-block;transition:transform .15s ease;transform:' + (isOpen ? "rotate(90deg)" : "rotate(0deg)") + ';">▸</span>') : "";
+var head = '<div class="rank-item"' + (hasSpeedData ? ' style="cursor:pointer;" onclick="toggleDashRank(\'' + rankId + '\')"' : "") + '><span class="rank-name">' + escHtml(t.name) + '</span><div class="rank-bar-wrap"><div class="rank-bar" style="width:' + pct + '%"></div></div><span class="rank-count">' + countCap + countLabel + (trate !== null ? " ・ " + trate + "%" : "") + kakariLabel + chevron + "</span></div>";
+var detailHtml = isOpen ? ('<div style="margin-top:6px;margin-bottom:2px;padding:8px 8px 2px;border-radius:8px;background:#0F1929;border:1px dashed #26374E;">' + renderSpeedBreakdownHtml(t.speed) + "</div>") : "";
+return head + detailHtml;
 }).join("");
+var overallSpeedCard = (isWater && totals.some(function (t) { return Object.keys(t.speed).length > 0; })) ? ('<div class="card"><div class="recent-title">進入スピード別 成功率(全技合算)</div>' + renderSpeedBreakdownHtml(speedTotalsAggregate(totals)) + "</div>") : "";
 
 var recentHtml = (S.dashRecentRange === "recent" ? entries.slice().reverse().slice(0, 6) : entries.filter(function (fe) { return isInDashRange(fe.date, S.dashRecentRange); }).slice().reverse()).map(function (e) {
 var chipsExpanded = !!S.dashChipsExpanded[e.id];
@@ -1491,6 +1548,7 @@ renderTrendChartHtml("chart-total", trend, 150) +
 "</div>" +
 airtimeChartCard +
 '<div class="card"><div class="recent-title">技別 累計本数' + (isWater ? "・成功率" : "") + "</div><div class=\"rank-list\">" + rankHtml + "</div></div>" +
+overallSpeedCard +
 renderVideoGalleryCard(entries) +
 '<div><div class="recent-title" style="display:flex;align-items:center;justify-content:space-between;gap:8px;"><span>直近の記録</span><button class="chip-btn" style="font-size:11px;padding:3px 8px;" onclick="cycleDashRange()">' + dashRangeLabel(S.dashRecentRange) + '</button></div><div class="recent-list">' + recentHtml + "</div></div>" +
 (isWater ? renderFacilityBreakdown(entries) : "")
@@ -1697,6 +1755,7 @@ unnatural: !!r.unnatural,
 success: r.success,
 fail: r.fail,
 reps: r.reps,
+speedLevel: r.speedLevel || "normal",
 note: r.note || "",
 };
 }),
@@ -1720,6 +1779,7 @@ if (S.editDraft.rows.length > 1) { S.editDraft.rows = S.editDraft.rows.filter(fu
 }
 function setEditRowTrick(idx, v) { S.editDraft.rows[idx].trickId = v; render(); }
 function setEditRowModifier(idx, m) { S.editDraft.rows[idx].modifier = m; render(); }
+function setEditRowSpeed(idx, v) { S.editDraft.rows[idx].speedLevel = v; render(); }
 function toggleEditRowNuki(idx) { S.editDraft.rows[idx].nuki = !S.editDraft.rows[idx].nuki; render(); }
 function toggleEditRowUnnatural(idx) { S.editDraft.rows[idx].unnatural = !S.editDraft.rows[idx].unnatural; render(); }
 function toggleEditRowKakari(idx) { S.editDraft.rows[idx].kakari = !S.editDraft.rows[idx].kakari; render(); }
@@ -1735,7 +1795,7 @@ return { rowId: r.rowId || genRowId(), trickId: r.trickId, trickLabel: trickLabe
 });
 } else {
 validRows = S.editDraft.rows.filter(function (r) { return ((r.success !== "" && r.success !== undefined && Number(r.success) >= 0) || (r.fail !== "" && r.fail !== undefined && Number(r.fail) >= 0)); }).map(function (r) {
-return { rowId: r.rowId || genRowId(), trickId: r.trickId, trickLabel: trickLabel(r.trickId), modifier: r.modifier, nuki: !!r.nuki, unnatural: !!r.unnatural, success: Number(r.success) || 0, fail: Number(r.fail) || 0, note: (r.note || "").trim() };
+return { rowId: r.rowId || genRowId(), trickId: r.trickId, trickLabel: trickLabel(r.trickId), modifier: r.modifier, nuki: !!r.nuki, unnatural: !!r.unnatural, success: Number(r.success) || 0, fail: Number(r.fail) || 0, speedLevel: r.speedLevel || "normal", note: (r.note || "").trim() };
 });
 }
 if (validRows.length === 0) return;
@@ -1828,6 +1888,7 @@ trickSelect +
 '<div class="inline-row">' + modifierChips + "</div>" +
 '<div class="inline-row">' + nukiChip + unnaturalChip + "</div>" +
 '<div class="inline-row">' + countFields + "</div>" +
+(category === "trampoline" ? "" : renderSpeedSelectHtml(idx, row, "setEditRowSpeed")) +
 (function () {
 var rowId = row.rowId || "";
 if (category === "trampoline") {
