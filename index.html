@@ -158,6 +158,22 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.7); cur
 .chart-tooltip { position: absolute; top: 0; transform: translate(-50%, -100%); background: #1B2C42; border: 1px solid #26374E; border-radius: 8px; padding: 6px 8px; font-size: 11px; color: #8CA0B8; white-space: nowrap; pointer-events: none; z-index: 10; }
 .chart-tooltip .tt-date { color: #EAF1F8; margin-bottom: 2px; }
 
+.coach-share-wrap { margin-top: 6px; width: 100%; }
+.coach-share-btn { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; padding: 4px 8px; border-radius: 6px; border: 1px solid #2E4A38; background: rgba(124,217,138,.10); color: #7CD98A; cursor: pointer; }
+.coach-share-panel { margin-top: 6px; padding: 8px; border-radius: 8px; background: #0F1929; border: 1px dashed #26374E; display: flex; flex-direction: column; gap: 6px; }
+.coach-share-textarea { width: 100%; min-height: 44px; resize: vertical; background: #131F30; border: 1px solid #26374E; border-radius: 6px; color: #EAF1F8; font-size: 12px; padding: 6px 8px; box-sizing: border-box; font-family: inherit; }
+.coach-share-best-toggle { font-size: 11px; color: #8CA0B8; display: flex; align-items: center; gap: 5px; }
+.coach-share-error { font-size: 10px; color: #FF9645; }
+.coach-share-submit-btn { align-self: flex-end; font-size: 11px; padding: 5px 12px; border-radius: 6px; border: none; background: #7CD98A; color: #062230; font-weight: 700; cursor: pointer; }
+.coach-share-submit-btn:disabled { opacity: .6; cursor: default; }
+.coach-share-best-badge { font-size: 9px; color: #FFD866; margin-left: 6px; }
+.coach-share-thread { margin-top: 6px; display: flex; flex-direction: column; gap: 5px; }
+.coach-note-bubble { border-radius: 8px; padding: 6px 8px; font-size: 11px; max-width: 92%; }
+.coach-note-bubble.athlete-bubble { background: rgba(76,195,240,.10); border: 1px solid #1F3A4D; align-self: flex-start; }
+.coach-note-bubble.coach-bubble { background: rgba(255,150,69,.10); border: 1px solid #4A3320; align-self: flex-end; }
+.coach-note-meta { font-size: 9px; color: #5C7086; margin-bottom: 2px; }
+.coach-note-text { color: #C7D6E5; white-space: pre-wrap; word-break: break-word; }
+
 .icon { display: inline-block; vertical-align: middle; }
 </style>
 </head>
@@ -195,6 +211,7 @@ return apiGet().then(function (data) {
 ATHLETES = (data.athletes || []).map(function (a) { return { id: a.id, name: a.name }; });
 DATA = data.records || [];
 VIDEOS = data.videos || [];
+COACHNOTES = data.coachNotes || [];
 recentAthleteIds = computeRecentAthleteIds();
 if (!S.athlete && ATHLETES.length) { S.athlete = getOrderedAthletes()[0].id; }
 });
@@ -223,6 +240,14 @@ return VIDEOS.filter(function (v) { return v.entryId === entryId && v.rowId === 
 /* エントリ内の全動画(新形式・旧形式どちらも)を集約する。ギャラリーカード表示用。 */
 function videosForEntry(entryId) {
 return VIDEOS.filter(function (v) { return v.entryId === entryId; });
+}
+
+/* 技行(rowId)単位でコーチへの共有(share)とその返信(reply)を時系列に集約する。 */
+function coachNotesForRow(entryId, rowId) {
+if (!rowId) return [];
+return COACHNOTES.filter(function (n) { return n.linkedEntryId === entryId && n.linkedRowId === rowId; })
+.slice()
+.sort(function (a, b) { return a.createdAt < b.createdAt ? -1 : 1; });
 }
 
 /* ---- 動画アップロード(Dropbox連携、Apps Script経由のチャンクアップロード) ----
@@ -599,6 +624,7 @@ return { trickId: trickId, modifier: modifier || "none", nuki: !!nuki, unnatural
 }
 var DATA = [];
 var VIDEOS = [];
+var COACHNOTES = [];
 var seedCounter = DATA.length;
 
 /* ---- recently-used athlete ordering ---- */
@@ -723,6 +749,7 @@ dashRecentRange: "recent",
 dashChipsExpanded: {},dashGroupOpen: {},dashRankOpen: {},
 dashNoteOpen: {},dashRowNoteOpen: {},refreshing: false,
 refreshError: "",
+dashShareOpen: {},dashShareText: {},dashShareBest: {},dashShareSending: {},dashShareError: {},
 
 trickUsageCount: {},
 trickLastUsed: null,
@@ -1409,6 +1436,75 @@ function toggleDashChips(entryId) { S.dashChipsExpanded[entryId] = !S.dashChipsE
 function toggleDashRank(id) { S.dashRankOpen[id] = !S.dashRankOpen[id]; render(); }
 function toggleDashNote(entryId) { S.dashNoteOpen[entryId] = !S.dashNoteOpen[entryId]; render(); }
 function toggleDashRowNote(rowId) { S.dashRowNoteOpen[rowId] = !S.dashRowNoteOpen[rowId]; render(); }
+function toggleDashShare(rowId) {
+S.dashShareOpen[rowId] = !S.dashShareOpen[rowId];
+if (S.dashShareBest[rowId] === undefined) S.dashShareBest[rowId] = false;
+S.dashShareError[rowId] = "";
+render();
+}
+function setDashShareText(rowId, v) { S.dashShareText[rowId] = v; }
+function setDashShareBest(rowId, v) { S.dashShareBest[rowId] = v; render(); }
+function submitDashShare(athleteId, entryId, rowId) {
+if (S.dashShareSending[rowId]) return;
+S.dashShareSending[rowId] = true;
+S.dashShareError[rowId] = "";
+render();
+var payload = {
+type: "addCoachNote",
+athleteId: athleteId,
+text: (S.dashShareText[rowId] || "").trim(),
+kind: "share",
+source: "athlete",
+linkedEntryId: entryId,
+linkedRowId: rowId,
+isBestOfDay: !!S.dashShareBest[rowId],
+};
+apiPost(payload).then(function (result) {
+if (result.status !== "ok") { throw new Error(result.message || "共有に失敗しました"); }
+return refreshData();
+}).then(function () {
+S.dashShareSending[rowId] = false;
+S.dashShareOpen[rowId] = false;
+S.dashShareText[rowId] = "";
+S.dashShareBest[rowId] = false;
+render();
+}).catch(function (err) {
+S.dashShareSending[rowId] = false;
+S.dashShareError[rowId] = "共有に失敗しました。通信状況を確認してもう一度お試しください。";
+render();
+});
+}
+/* 技行の下に表示する、共有済みのコーチノート(自分の共有＋コーチからの返信)一覧。 */
+function renderDashShareThread(entryId, rowId) {
+var notes = coachNotesForRow(entryId, rowId);
+if (!notes.length) return "";
+return '<div class="coach-share-thread">' + notes.map(function (n) {
+var isCoach = n.source === "coach";
+var bubbleClass = isCoach ? "coach-bubble" : "athlete-bubble";
+var label = isCoach ? "コーチ" : "本人";
+var bestBadge = n.isBestOfDay ? '<span class="coach-share-best-badge">★ 今日のベスト</span>' : "";
+var textHtml = n.text ? escHtml(n.text) : (isCoach ? "" : "<em>(コメントなし)</em>");
+return '<div class="coach-note-bubble ' + bubbleClass + '"><div class="coach-note-meta">' + label + " ・ " + escHtml(n.createdAt) + bestBadge + '</div>' + (textHtml ? '<div class="coach-note-text">' + textHtml + '</div>' : '') + '</div>';
+}).join("") + '</div>';
+}
+/* 技行ごとの「コーチへ共有」ボタン＋パネル。 */
+function renderDashShareControl(athleteId, entryId, rowId) {
+var isOpen = !!S.dashShareOpen[rowId];
+var sending = !!S.dashShareSending[rowId];
+var err = S.dashShareError[rowId] || "";
+var threadHtml = renderDashShareThread(entryId, rowId);
+var btn = '<button class="coach-share-btn" onclick="toggleDashShare(\'' + rowId + '\')">' + iconSvg('<path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/>', 10, "#7CD98A") + (isOpen ? "閉じる" : "コーチへ共有") + '</button>';
+var panel = "";
+if (isOpen) {
+panel = '<div class="coach-share-panel">' +
+'<textarea class="coach-share-textarea" placeholder="コーチへのひとことメモ(任意)" oninput="setDashShareText(\'' + rowId + '\', this.value)">' + escHtml(S.dashShareText[rowId] || "") + '</textarea>' +
+'<label class="coach-share-best-toggle"><input type="checkbox" ' + (S.dashShareBest[rowId] ? "checked" : "") + ' onchange="setDashShareBest(\'' + rowId + '\', this.checked)"> 今日のベストにする</label>' +
+(err ? '<div class="coach-share-error">' + escHtml(err) + '</div>' : "") +
+'<button class="coach-share-submit-btn" ' + (sending ? "disabled" : "") + ' onclick="submitDashShare(\'' + athleteId + "','" + entryId + "','" + rowId + '\')">' + (sending ? "送信中…" : "送信する") + '</button>' +
+'</div>';
+}
+return '<div class="coach-share-wrap">' + btn + panel + threadHtml + '</div>';
+}
 function renderAthleteDashboard() {
 var entries = getEntries(S.dashAthlete, S.dashCategory);
 if (entries.length === 0) {
@@ -1489,7 +1585,11 @@ var code2 = composedCode(r.trickId, r.modifier);
 var countLabel2 = (r.reps !== undefined ? r.reps + "本" : r.success + "/" + (r.success + r.fail));
 var chipHtml = '<span class="recent-tech-chip' + (r.note ? " has-note" : "") + '"' + (r.note ? (' onclick="toggleDashRowNote(\'' + r.rowId + '\')" style="cursor:pointer;"') : "") + '>' + (r.note ? "📝 " : "") + escHtml(trickLabel(r.trickId)) + (code2 ? " (" + escHtml(code2) + ")" : "") + (r.nuki ? " ・抜き" : "") + (r.unnatural ? " ・アンナチュラル" : "") + (r.kakari ? " ・かかり" : "") + " " + countLabel2 + "</span>";
 var videoBtns = r.reps !== undefined ? renderDashVideoGallery(e.id, ri, r, "single", "動画") : renderDashVideoGallery(e.id, ri, r, "success", "成功") + renderDashVideoGallery(e.id, ri, r, "fail", "失敗");
-return '<div class="recent-tech-row">' + chipHtml + videoBtns + (S.dashRowNoteOpen[r.rowId] && r.note ? ('<div class="tech-note-row-display">' + escHtml(r.note) + "</div>") : "") + "</div>";
+return '<div class="recent-tech-row" style="flex-direction:column;align-items:stretch;">' +
+'<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">' + chipHtml + videoBtns + '</div>' +
+(S.dashRowNoteOpen[r.rowId] && r.note ? ('<div class="tech-note-row-display">' + escHtml(r.note) + "</div>") : "") +
+renderDashShareControl(e.athlete, e.id, r.rowId) +
+"</div>";
 }).join("") + "</div>") : "";
 return head + detailHtml;
 }).join("");if (e.rows.length > 10) { techChips += '<div class="recent-tech-row"><button class="chip-btn" style="font-size:11px;padding:3px 8px;" onclick="toggleDashChips(\'' + e.id + '\')">' + (chipsExpanded ? "閉じる" : "+" + (e.rows.length - 10) + "件 もっと見る") + "</button></div>"; }
