@@ -247,7 +247,11 @@ function coachNotesForRow(entryId, rowId) {
 if (!rowId) return [];
 return COACHNOTES.filter(function (n) { return n.linkedEntryId === entryId && n.linkedRowId === rowId; })
 .slice()
-.sort(function (a, b) { return a.createdAt < b.createdAt ? -1 : 1; });
+.sort(function (a, b) {
+if (a.createdAt < b.createdAt) return -1;
+if (a.createdAt > b.createdAt) return 1;
+return 0;
+});
 }
 
 /* ---- 動画アップロード(Dropbox連携、Apps Script経由のチャンクアップロード) ----
