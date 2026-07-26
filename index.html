@@ -206,6 +206,30 @@ headers: { "Content-Type": "text/plain;charset=utf-8" },
 body: JSON.stringify(payload),
 }).then(function (res) { return res.json(); });
 }
+/* ---- ナショナルチームエアlogとの記録統合(林遼真・見瀬クレアのみ) ----
+   この2名はナショナルチーム兼MIC所属で、記録はNTエアlog側でのみ入力してもらい、
+   MIC側ではダッシュボードで参照だけできるようにする(編集・コーチへの共有はNT側で行う)。
+   NT側は「成功/失敗/ヨレ」の3択があるが、MIC側にヨレの概念はないため、
+   ヨレ・失敗・未選択はすべて「失敗」として合算する(本数・技・進入スピード等はそのまま反映される)。 */
+var NT_API_URL = "https://script.google.com/macros/s/AKfycbwhxPSdRvM67Bf7RO6gDUoZxxvGipDNGs7Up5BXUvbqulr90wjGzhZXtV2VQERyP3rAYw/exec";
+var CROSS_TEAM_ATHLETES = {
+"a86206408": "a86206408", // 林遼真(NT側でも同じID)
+"a1d20f6b4": "adeb92004", // 見瀬クレア(MIC id -> NT id)
+};
+var NT_TO_MIC_ATHLETE = {};
+Object.keys(CROSS_TEAM_ATHLETES).forEach(function (micId) { NT_TO_MIC_ATHLETE[CROSS_TEAM_ATHLETES[micId]] = micId; });
+function ntRowToMicRow(r) {
+var total = r.reps !== undefined ? (Number(r.reps) || 0) : ((Number(r.success) || 0) + (Number(r.fail) || 0));
+var success = r.reps !== undefined ? (r.result === "success" ? total : 0) : (Number(r.success) || 0);
+return { rowId: r.rowId, trickId: r.trickId, modifier: r.modifier || "none", nuki: !!r.nuki, unnatural: !!r.unnatural, kakari: !!r.kakari, success: success, fail: total - success, speedLevel: r.speedLevel || "normal", note: r.note || "" };
+}
+function fetchExternalEntries() {
+return fetch(NT_API_URL).then(function (res) { return res.json(); }).then(function (data) {
+return (data.records || []).filter(function (e) { return NT_TO_MIC_ATHLETE.hasOwnProperty(e.athlete); }).map(function (e) {
+return { id: "nt-" + e.id, athlete: NT_TO_MIC_ATHLETE[e.athlete], category: "water", date: e.date, facility: e.facility || "", kicker: e.kicker || "", note: e.note || "", rows: (e.rows || []).map(ntRowToMicRow), _source: "nt" };
+});
+}).catch(function (err) { console.error("NTエアlogデータの取得に失敗しました", err); return []; });
+}
 function refreshData() {
 return apiGet().then(function (data) {
 ATHLETES = (data.athletes || []).map(function (a) { return { id: a.id, name: a.name }; });
@@ -213,6 +237,8 @@ DATA = data.records || [];
 VIDEOS = data.videos || [];
 COACHNOTES = data.coachNotes || [];
 recentAthleteIds = computeRecentAthleteIds();
+return fetchExternalEntries().then(function (extEntries) { DATA = DATA.concat(extEntries); });
+}).then(function () {
 if (!S.athlete && ATHLETES.length) { S.athlete = getOrderedAthletes()[0].id; }
 });
 }
@@ -1509,6 +1535,34 @@ panel = '<div class="coach-share-panel">' +
 }
 return '<div class="coach-share-wrap">' + btn + panel + threadHtml + '</div>';
 }
+/* NTエアlogから合成した記録は参照専用(修正・コーチへの共有はNT側で行うため、ここではボタンを出さない)。 */
+function renderExternalRecentItemHtml(e) {
+var groupMap = {}, groupOrder = [];
+e.rows.forEach(function (r) {
+var code = composedCode(r.trickId, r.modifier);
+var key = r.trickId + "|" + (code || "") + "|" + (r.nuki ? 1 : 0) + "|" + (r.unnatural ? 1 : 0);
+if (!groupMap[key]) { groupMap[key] = { trickId: r.trickId, code: code, nuki: r.nuki, unnatural: r.unnatural, success: 0, fail: 0 }; groupOrder.push(key); }
+groupMap[key].success += Number(r.success) || 0;
+groupMap[key].fail += Number(r.fail) || 0;
+});
+var techChips = groupOrder.map(function (key) {
+var grp = groupMap[key];
+var total = grp.success + grp.fail;
+var rate = total > 0 ? Math.round((grp.success / total) * 100) : null;
+var rateColor = rate === null ? COLORS.ice : (rate >= 70 ? COLORS.ice : (rate >= 40 ? COLORS.amber : "#E5484D"));
+return '<div class="recent-tech-row"><span class="recent-tech-chip">' + escHtml(trickLabel(grp.trickId)) + (grp.code ? " (" + escHtml(grp.code) + ")" : "") + (grp.nuki ? " ・抜き" : "") + (grp.unnatural ? " ・アンナチュラル" : "") + '</span><span style="font-family:ui-monospace,monospace;font-weight:700;color:' + rateColor + ';">' + (rate !== null ? rate + "% " : "") + grp.success + "/" + total + "本</span></div>";
+}).join("");
+return (
+'<div class="recent-item">' +
+'<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">' +
+'<div class="recent-date">' + escHtml(e.date) + "</div>" +
+'<span class="code-badge">NTエアlogで記録</span>' +
+"</div>" +
+'<div class="recent-meta">' + escHtml((e.facility || "") + (e.kicker ? " ・ " + e.kicker : "")) + "</div>" +
+'<div class="recent-techs">' + techChips + "</div>" +
+"</div>"
+);
+}
 function renderAthleteDashboard() {
 var entries = getEntries(S.dashAthlete, S.dashCategory);
 if (entries.length === 0) {
@@ -1552,6 +1606,7 @@ return head + detailHtml;
 var overallSpeedCard = (isWater && totals.some(function (t) { return Object.keys(t.speed).length > 0; })) ? ('<div class="card"><div class="recent-title">進入スピード別 成功率(全技合算)</div>' + renderSpeedBreakdownHtml(speedTotalsAggregate(totals)) + "</div>") : "";
 
 var recentHtml = (S.dashRecentRange === "recent" ? entries.slice().reverse().slice(0, 6) : entries.filter(function (fe) { return isInDashRange(fe.date, S.dashRecentRange); }).slice().reverse()).map(function (e) {
+if (e._source === "nt") { return renderExternalRecentItemHtml(e); }
 var chipsExpanded = !!S.dashChipsExpanded[e.id];
 var shownRows = chipsExpanded ? e.rows : e.rows.slice(0, 10);
 var groupOrder = [], groupMap = {};
