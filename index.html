@@ -230,14 +230,14 @@ return { id: "nt-" + e.id, athlete: NT_TO_MIC_ATHLETE[e.athlete], category: "wat
 });
 }).catch(function (err) { console.error("NTエアlogデータの取得に失敗しました", err); return []; });
 }
-function refreshData() {
+function refreshData() { var extPromise = fetchExternalEntries();
 return apiGet().then(function (data) {
 ATHLETES = (data.athletes || []).map(function (a) { return { id: a.id, name: a.name }; });
 DATA = data.records || [];
 VIDEOS = data.videos || [];
 COACHNOTES = data.coachNotes || [];
 recentAthleteIds = computeRecentAthleteIds();
-var extPromise = fetchExternalEntries(); extPromise.then(function (extEntries) { if (extEntries && extEntries.length) { DATA = DATA.concat(extEntries); render(); } }); return Promise.race([extPromise, new Promise(function (resolve) { setTimeout(function () { resolve(null); }, 5000); })]);
+extPromise.then(function (extEntries) { if (extEntries && extEntries.length) { DATA = DATA.concat(extEntries); render(); } }); return null;
 }).then(function () {
 if (!S.athlete && ATHLETES.length) { S.athlete = getOrderedAthletes()[0].id; }
 });
