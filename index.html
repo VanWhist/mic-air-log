@@ -2138,6 +2138,8 @@ return (
 '<div class="tabs">' +
 '<button class="tab-btn ' + (S.tab === "record" ? "active" : "") + '" onclick="selectTab(\'record\')">記録する</button>' +
 '<button class="tab-btn ' + (S.tab === "dashboard" ? "active" : "") + '" onclick="selectTab(\'dashboard\')">ダッシュボード</button>' +
+/* 動画ビューア(video/index.html)への入口。別ページなので<a>で開く。 */
+'<a class="tab-btn" style="text-decoration:none;text-align:center;line-height:2;" href="video/">動画を見る</a>' +
 "</div>"
 );
 }
