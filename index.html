@@ -217,8 +217,9 @@ textFaint: "#5C7086",
 
 /* ---- 選手専用リンク(?a=<選手ID>) ----
    専用リンクで開くと「記録する」タブが本人固定になり、ダッシュボードから他の選手の記録を
-   修正・削除したり、他の選手としてコーチへ共有したりもできなくなる。ダッシュボードの
-   「閲覧」は今までどおり全員分できる。
+   修正・削除したり、他の選手としてコーチへ共有したりもできなくなる。ダッシュボードで
+   他の選手の記録(技・本数・動画)を見ることは今までどおりできるが、メモ類は本人の分だけ
+   見える(canSeeNotesFor を参照)。
    重要: これはログインではない。URLの ?a= を書き換えれば外せる。目的は「うっかり他人の
    名前で入力してしまう」のを防ぐことであって、なりすまし防止ではない(Vanと確認済み)。
    本気で防ぐならNTエアlogのようなログイン方式が必要になる。 */
@@ -233,6 +234,13 @@ function isScoped() { return !!SCOPE_ID; }
 function scopedAthleteName() { var a = ATHLETES.filter(function (x) { return x.id === SCOPE_ID; })[0]; return a ? a.name : ""; }
 /* その選手に対して書き込み(記録・修正・削除・コーチ共有)をしてよいか。 */
 function canWriteFor(athleteId) { return !isScoped() || String(athleteId) === String(SCOPE_ID); }
+/* その選手のメモ(技の行メモ・記録全体のメモ・コーチ共有のやりとり)を見せてよいか。
+   専用リンクで開いているときは本人の分だけ。数字や技の内容はこれまでどおり全員分見られる。
+   コーチは専用リンクを使わないので、コーチ画面では従来どおり全員分のメモが見える。
+   重要: これは表示上の制限であって、URLの ?a= を消せば見える。目的は「他の選手のメモを
+   うっかり読んでしまう」のを防ぐことであって、秘匿ではない(Vanと確認済み 2026-08-29)。
+   本気で隠すならApps Script側で本人分以外のメモを返さないようにする必要がある。 */
+function canSeeNotesFor(athleteId) { return !isScoped() || String(athleteId) === String(SCOPE_ID); }
 /* リンクが壊れている(存在しない選手ID)状態。黙って全員分書ける状態に戻すのが一番危険なので、
    はっきり出して記録タブを止める。 */
 function scopeBroken() { return isScoped() && !S.loading && !S.loadError && !SCOPE_READY; }
@@ -1791,7 +1799,8 @@ grp.items.push({ row: r, ri: ri });
 });
 var techChips = groupOrder.map(function (key, gi) {
 var grp = groupMap[key];
-var notesInGroup = grp.items.map(function (it) { return it.row.note; }).filter(Boolean);
+var canSeeNotes = canSeeNotesFor(e.athlete);
+var notesInGroup = canSeeNotes ? grp.items.map(function (it) { return it.row.note; }).filter(Boolean) : [];
 var uniqueNotes = notesInGroup.filter(function (n, ni) { return notesInGroup.indexOf(n) === ni; });
 var hasNote = notesInGroup.length > 0;
 var gid = e.id + "-g" + gi;
@@ -1812,11 +1821,12 @@ var detailHtml = isOpen ? ('<div class="group-detail" style="margin-top:6px;padd
 var r = it.row, ri = it.ri;
 var code2 = composedCode(r.trickId, r.modifier);
 var countLabel2 = (r.reps !== undefined ? r.reps + "本" : r.success + "/" + (r.success + r.fail));
-var chipHtml = '<span class="recent-tech-chip' + (r.note ? " has-note" : "") + '"' + (r.note ? (' onclick="toggleDashRowNote(\'' + r.rowId + '\')" style="cursor:pointer;"') : "") + '>' + (r.note ? "📝 " : "") + escHtml(trickLabel(r.trickId)) + (code2 ? " (" + escHtml(code2) + ")" : "") + (r.nuki ? " ・抜き" : "") + (r.unnatural ? " ・アンナチュラル" : "") + (r.kakari ? " ・かかり" : "") + " " + countLabel2 + "</span>";
+var showRowNote = !!r.note && canSeeNotes;
+var chipHtml = '<span class="recent-tech-chip' + (showRowNote ? " has-note" : "") + '"' + (showRowNote ? (' onclick="toggleDashRowNote(\'' + r.rowId + '\')" style="cursor:pointer;"') : "") + '>' + (showRowNote ? "📝 " : "") + escHtml(trickLabel(r.trickId)) + (code2 ? " (" + escHtml(code2) + ")" : "") + (r.nuki ? " ・抜き" : "") + (r.unnatural ? " ・アンナチュラル" : "") + (r.kakari ? " ・かかり" : "") + " " + countLabel2 + "</span>";
 var videoBtns = r.reps !== undefined ? renderDashVideoGallery(e.id, ri, r, "single", "動画") : renderDashVideoGallery(e.id, ri, r, "success", "成功") + renderDashVideoGallery(e.id, ri, r, "fail", "失敗");
 return '<div class="recent-tech-row" style="flex-direction:column;align-items:stretch;">' +
 '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">' + chipHtml + videoBtns + '</div>' +
-(S.dashRowNoteOpen[r.rowId] && r.note ? ('<div class="tech-note-row-display">' + escHtml(r.note) + "</div>") : "") +
+(S.dashRowNoteOpen[r.rowId] && showRowNote ? ('<div class="tech-note-row-display">' + escHtml(r.note) + "</div>") : "") +
 renderDashShareControl(e.athlete, e.id, r.rowId) +
 "</div>";
 }).join("") + "</div>") : "";
@@ -1831,8 +1841,8 @@ return (
 "</div>" +
 '<div class="recent-meta">' + (isWater ? escHtml(e.facility + " ・ " + e.kicker) : "トランポリン") + "</div>" +
 '<div class="recent-techs">' + techChips + "</div>" +
-(e.note ? '<div class="tech-note-toggle"><a href="javascript:void(0)" onclick="toggleDashNote(\'' + e.id + '\')">' + (S.dashNoteOpen[e.id] ? '－ 全体メモを閉じる' : '+ 全体メモ') + '</a></div>' : '') +
-(e.note && S.dashNoteOpen[e.id] ? '<div class="recent-note">' + escHtml(e.note) + "</div>" : "") +
+(e.note && canSeeNotesFor(e.athlete) ? '<div class="tech-note-toggle"><a href="javascript:void(0)" onclick="toggleDashNote(\'' + e.id + '\')">' + (S.dashNoteOpen[e.id] ? '－ 全体メモを閉じる' : '+ 全体メモ') + '</a></div>' : '') +
+(e.note && S.dashNoteOpen[e.id] && canSeeNotesFor(e.athlete) ? '<div class="recent-note">' + escHtml(e.note) + "</div>" : "") +
 (isEditingEntry ? renderEntryEditForm(e) : "") +
 "</div>"
 );
