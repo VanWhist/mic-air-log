@@ -95,6 +95,15 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.7); cur
 .tech-note-row .note-textarea { font-size: 13px; padding: 8px 10px; }
 .tech-share-check { display: flex; align-items: center; gap: 6px; margin-top: 6px; font-size: 12px; color: #8a94a6; }
 .tech-share-check input[type="checkbox"] { width: 16px; height: 16px; }
+.tech-share-check.on { color: #7CD98A; font-weight: 700; }
+.share-hint { font-size: 11px; color: #7CD98A; margin-top: 4px; line-height: 1.5; }
+.share-confirm { background: #10242C; border: 1px solid #2E5D52; border-radius: 10px; padding: 12px; margin-top: 10px; }
+.share-confirm-title { font-size: 13px; font-weight: 700; color: #7CD98A; margin-bottom: 6px; }
+.share-confirm-body { font-size: 12px; color: #c7d0dc; line-height: 1.6; margin-bottom: 10px; }
+.share-confirm-quote { display: block; margin-top: 6px; padding: 8px 10px; background: #0B1820; border-radius: 8px; color: #e6ecf3; white-space: pre-wrap; }
+.share-confirm-btns { display: flex; gap: 8px; }
+.share-confirm-btns button { flex: 1; border-radius: 8px; padding: 11px 8px; font-size: 12.5px; font-weight: 700; font-family: inherit; cursor: pointer; border: 1px solid #3A4757; background: #1A2230; color: #c7d0dc; }
+.share-confirm-btns button.primary { background: #7CD98A; color: #062230; border-color: #7CD98A; }
 
 .save-btn { width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 0; border-radius: 12px; font-size: 14px; font-weight: 600; border: none; cursor: pointer; background: #4CC3F0; color: #062230; }
 .save-btn.flash { background: #3FAE6A; }
@@ -901,6 +910,9 @@ kicker: FACILITIES[0].kickers[0],
 rows: [emptyTechRow("water")],
 note: "",
 shareNote: false,
+shareConfirm: false,
+shareConfirmed: false,
+savedShared: false,
 saving: false,
 savedFlash: false,
 dashAthlete: "team",
@@ -1014,6 +1026,29 @@ function toggleRowUnnatural(idx) { S.rows[idx].unnatural = !S.rows[idx].unnatura
 function toggleRowKakari(idx) { S.rows[idx].kakari = !S.rows[idx].kakari; render(); }
 function setRowField(idx, field, v) { S.rows[idx][field] = v; }
 
+/* 記録全体のメモを「コーチに送る」かどうかのトグル。
+   メモが空のときは出さない(書いていないのに押せてしまうのを防ぐ)。
+   2026-09-13: 本人が送ったつもりのない共有が起きていたため、文言を具体化し、
+   保存前の確認と保存後の通知を足した。 */
+function setShareNote(v) { S.shareNote = !!v; render(); }
+function renderShareToggleHtml() {
+if (!(S.note || "").trim()) { S.shareNote = false; return ""; }
+return '<label class="tech-share-check' + (S.shareNote ? " on" : "") + '"><input type="checkbox" onchange="setShareNote(this.checked)" ' + (S.shareNote ? "checked" : "") + '> このメモをコーチに送る</label>' +
+(S.shareNote ? '<div class="share-hint">保存すると、コーチがこのメモを読めるようになります。</div>' : "");
+}
+function renderShareConfirmHtml() {
+var t = (S.note || "").trim();
+var shown = t.length > 60 ? t.slice(0, 60) + "…" : t;
+return '<div class="share-confirm">' +
+'<div class="share-confirm-title">コーチに送りますか？</div>' +
+'<div class="share-confirm-body">下のメモがコーチに届きます。コーチが読んで返信できるようになります。<span class="share-confirm-quote">' + escHtml(shown) + '</span></div>' +
+'<div class="share-confirm-btns">' +
+'<button onclick="saveWithoutSharing()">送らずに保存</button>' +
+'<button class="primary" onclick="saveAndShare()">送って保存</button>' +
+'</div></div>';
+}
+function saveWithoutSharing() { S.shareNote = false; S.shareConfirm = false; S.shareConfirmed = true; saveEntry(); }
+function saveAndShare() { S.shareConfirm = false; S.shareConfirmed = true; saveEntry(); }
 function saveEntry() {
 if (!S.athlete) return;
 var validRows;
@@ -1027,6 +1062,11 @@ return { rowId: r.rowId, note: r.note, trickId: r.trickId, trickLabel: trickLabe
 });
 }
 if (validRows.length === 0) return;
+// コーチへの共有が入っているときは、保存前に一度だけ確認する。
+if (S.shareNote && (S.note || "").trim() && !S.shareConfirmed) { S.shareConfirm = true; render(); return; }
+S.shareConfirm = false;
+var didShare = !!(S.shareNote && (S.note || "").trim());
+S.shareConfirmed = false;
 S.saving = true;
 S.saveError = "";
 render();
@@ -1057,6 +1097,7 @@ S.saving = false;
 S.rows = [emptyTechRow(S.category)];
 S.note = "";
 S.shareNote = false;
+S.savedShared = didShare;
 S.savedFlash = true;
 render();
 setTimeout(function () { S.savedFlash = false; render(); }, 1600);
@@ -1169,7 +1210,11 @@ function toggleRowNoteOpen(idx) { S.rows[idx]._noteOpen = !S.rows[idx]._noteOpen
 function renderTechRowNoteHtml(row, idx) {
 var noteOpen = row._noteOpen || (row.note && row.note.trim());
 if (!noteOpen) { return '<div class="tech-note-toggle"><a href="javascript:void(0)" onclick="toggleRowNoteOpen(' + idx + ')">+ メモ</a></div>'; }
-return '<div class="tech-note-row"><textarea class="note-textarea tech-note-input" rows="2" placeholder="この技のメモ" oninput="setRowField(' + idx + ",'note',this.value)\" onblur=\"render()\">" + escHtml(row.note || '') + '</textarea><label class="tech-share-check"><input type="checkbox" onchange="setRowField(' + idx + ",'shareNote',this.checked)\"" + (row.shareNote ? ' checked' : '') + '> コーチにも共有</label></div>';
+/* 2026-09-13: 技ごとの「コーチにも共有」チェックを外した。
+   このチェックは validRows に shareNote が載っておらず、サーバーへ送られていなかった(常に undefined)。
+   選手がチェックしてもコーチには届かない状態だったため、表示をやめる。
+   技ごとにコーチへ送りたいときは、ダッシュボードの技行にある「コーチへ共有」ボタンを使う。 */
+return '<div class="tech-note-row"><textarea class="note-textarea tech-note-input" rows="2" placeholder="この技のメモ" oninput="setRowField(' + idx + ",'note',this.value)\" onblur=\"render()\">" + escHtml(row.note || '') + '</textarea></div>';
 }
 
 function renderSpeedSelectHtml(idx, row, setterFnName) {
@@ -1276,7 +1321,7 @@ var rowsHtml = S.rows.map(function (r, i) { return renderTechRow(r, i); }).join(
 
 var saveBtnInner;
 if (S.saving) saveBtnInner = "保存中…";
-else if (S.savedFlash) saveBtnInner = "保存しました ✓";
+else if (S.savedFlash) saveBtnInner = S.savedShared ? "保存して、コーチに送りました ✓" : "保存しました ✓";
 else saveBtnInner = iconSave(16, "#062230") + " 記録を保存";
 
 return (
@@ -1292,7 +1337,8 @@ return (
 ) +
 '<div><label class="field-label">技ログ</label><div class="tech-row-list">' + rowsHtml + "</div>" +
 '<button class="add-row-btn" onclick="addTechRow()">' + iconPlus(14, COLORS.ice) + " 技を追加</button></div>" +
-'<div><label class="field-label">メモ(任意)</label><textarea class="note-textarea" rows="2" placeholder="感覚、風向き、恐怖心など" oninput="setNote(this.value)">' + escHtml(S.note) + '</textarea><label class="tech-share-check"><input type="checkbox" onchange="S.shareNote=this.checked" ' + (S.shareNote ? "checked" : "") + '> コーチにも共有</label></div>' +
+'<div><label class="field-label">メモ(任意)</label><textarea class="note-textarea" rows="2" placeholder="感覚、風向き、恐怖心など" oninput="setNote(this.value)">' + escHtml(S.note) + '</textarea>' + renderShareToggleHtml() + '</div>' +
+(S.shareConfirm ? renderShareConfirmHtml() : "") +
 '<button class="save-btn ' + (S.savedFlash ? "flash" : "") + '" onclick="saveEntry()" ' + (S.saving ? "disabled" : "") + '>' + saveBtnInner + "</button>" +
 (S.bgUpload ? '<div class="save-note">🎬 動画をアップロード中… (' + S.bgUpload.done + '/' + S.bgUpload.total + ')</div>' : "") +
 (S.saveError ? '<div style="color:' + COLORS.amber + ';font-size:12px;margin-top:8px;">' + escHtml(S.saveError) + "</div>" : "") +
