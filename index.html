@@ -101,6 +101,7 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.7); cur
 .share-confirm-title { font-size: 13px; font-weight: 700; color: #7CD98A; margin-bottom: 6px; }
 .share-confirm-body { font-size: 12px; color: #c7d0dc; line-height: 1.6; margin-bottom: 10px; }
 .share-confirm-quote { display: block; margin-top: 6px; padding: 8px 10px; background: #0B1820; border-radius: 8px; color: #e6ecf3; white-space: pre-wrap; }
+.share-confirm-note { display: block; margin-top: 8px; font-size: 11px; color: #8a94a6; line-height: 1.6; }
 .share-confirm-btns { display: flex; gap: 8px; }
 .share-confirm-btns button { flex: 1; border-radius: 8px; padding: 11px 8px; font-size: 12.5px; font-weight: 700; font-family: inherit; cursor: pointer; border: 1px solid #3A4757; background: #1A2230; color: #c7d0dc; }
 .share-confirm-btns button.primary { background: #7CD98A; color: #062230; border-color: #7CD98A; }
@@ -1034,14 +1035,14 @@ function setShareNote(v) { S.shareNote = !!v; render(); }
 function renderShareToggleHtml() {
 if (!(S.note || "").trim()) { S.shareNote = false; return ""; }
 return '<label class="tech-share-check' + (S.shareNote ? " on" : "") + '"><input type="checkbox" onchange="setShareNote(this.checked)" ' + (S.shareNote ? "checked" : "") + '> このメモをコーチに送る</label>' +
-(S.shareNote ? '<div class="share-hint">保存すると、コーチがこのメモを読めるようになります。</div>' : "");
+(S.shareNote ? '<div class="share-hint">保存すると、コーチに届いて返信がもらえます。<br>（メモ自体は、送らなくてもコーチの画面には出ています）</div>' : "");
 }
 function renderShareConfirmHtml() {
 var t = (S.note || "").trim();
 var shown = t.length > 60 ? t.slice(0, 60) + "…" : t;
 return '<div class="share-confirm">' +
 '<div class="share-confirm-title">コーチに送りますか？</div>' +
-'<div class="share-confirm-body">下のメモがコーチに届きます。コーチが読んで返信できるようになります。<span class="share-confirm-quote">' + escHtml(shown) + '</span></div>' +
+'<div class="share-confirm-body">下のメモをコーチに送ります。コーチが読んで、返信できるようになります。<span class="share-confirm-quote">' + escHtml(shown) + '</span><span class="share-confirm-note">メモ自体は、送らなくてもコーチの画面には出ています。「送る」と、コーチとのやりとりが始まります。</span></div>' +
 '<div class="share-confirm-btns">' +
 '<button onclick="saveWithoutSharing()">送らずに保存</button>' +
 '<button class="primary" onclick="saveAndShare()">送って保存</button>' +
