@@ -207,6 +207,35 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.7); cur
 .coach-note-text { color: #C7D6E5; white-space: pre-wrap; word-break: break-word; }
 
 .icon { display: inline-block; vertical-align: middle; }
+
+/* 2026-10: ヨレ(NTエアlogと同じ7タグ・強さ1〜5) */
+.yure-panel { background: #131F30; border: 1px solid #7a4a1f; border-radius: 10px; padding: 8px; display: flex; flex-direction: column; gap: 6px; margin-top: 6px; }
+.yure-list-item { background: #1B2C42; border: 1px solid #26374E; border-radius: 8px; padding: 10px; cursor: pointer; }
+.yure-list-item.active { border-color: #FF9645; background: #2a1f14; }
+.yure-list-item-head { display: flex; align-items: center; gap: 8px; }
+.yure-check { width: 16px; height: 16px; border-radius: 4px; border: 1px solid #5C7086; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; color: #FF9645; flex-shrink: 0; }
+.yure-list-item.active .yure-check { border-color: #FF9645; background: #FF9645; color: #23140A; }
+.yure-list-label { font-size: 13px; font-weight: 600; }
+.yure-sev-inline { margin-top: 8px; padding-top: 8px; border-top: 1px dashed #7a4a1f; display: flex; flex-direction: column; gap: 6px; }
+.yure-sev-label { font-size: 10px; color: #FF9645; }
+.sev-chip { flex: 1; padding: 8px 0; }
+.sev-chip.active { background: #FF9645; color: #23140A; border-color: #FF9645; }
+/* 2026-10: 予定メニュー(選手ごと。PLANSに設定がある選手だけ) */
+.plan-card { background: #10233A; border: 1px solid #2E5C8A; border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+.plan-head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.plan-title { font-size: 14px; font-weight: 700; color: #EAF1F8; }
+.plan-phase { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 10px; background: #4CC3F0; color: #062230; }
+.plan-phase.check { background: #FF9645; color: #23140A; }
+.plan-sub { font-size: 11px; color: #9FB3C8; line-height: 1.5; }
+.plan-item { display: grid; grid-template-columns: 20px 1fr auto; gap: 8px; align-items: start; background: #16293F; border-radius: 8px; padding: 8px 10px; }
+.plan-item .no { font-size: 11px; font-weight: 700; color: #4CC3F0; padding-top: 1px; }
+.plan-item .nm { font-size: 13px; font-weight: 700; color: #EAF1F8; }
+.plan-item .rule { display: block; font-size: 11px; font-weight: 400; color: #FFB870; margin-top: 2px; }
+.plan-item .ct { font-size: 13px; font-weight: 700; color: #EAF1F8; white-space: nowrap; }
+.plan-item .sp { display: block; font-size: 10px; font-weight: 400; color: #9FB3C8; text-align: right; }
+.plan-btn { width: 100%; padding: 12px; border-radius: 10px; border: none; background: #4CC3F0; color: #062230; font-size: 14px; font-weight: 700; cursor: pointer; }
+.plan-note { font-size: 11px; color: #9FB3C8; line-height: 1.5; }
+.planned-badge { display: inline-block; font-size: 10px; font-weight: 700; color: #4CC3F0; border: 1px solid #2E5C8A; border-radius: 10px; padding: 1px 8px; margin-left: 6px; }
 </style>
 </head>
 <body>
@@ -718,6 +747,37 @@ var MODIFIERS = [
 { id: "G", label: "G" },
 { id: "g", label: "g" },
 ];
+
+/* 2026-10: ヨレ。NTエアlogと同じ7タグ・強さ1〜5(既定3)・保存名 wobbleDetail [{tag, severity}]。
+   MICは1行に「成功◯・失敗◯」を入れる形なので、ヨレは3つ目の数(yure)として持つ(案B・Van 2026-10-01)。
+   タグ・強さはヨレを1本以上入れたときだけ出る。 */
+var WOBBLE_TAGS = ["回転ショート", "回転オーバー", "右肩下がり", "左肩下がり", "体の捩れ", "右に飛んだ", "左に飛んだ"];
+
+/* 2026-10: 予定メニュー。選手IDで引く。ここに無い選手には何も出ない。
+   回数(何回目か)は、from 以降のウォーターの記録日を数えて自動で決める(記録する日付より前の日の数＋1)。
+   phases は回数の範囲ごとのメニュー。items が null の期間は「未設定」として直前のメニューを出す。
+   speed は SPEED_LEVELS の key。grab:true はグラブ付き(種類は本人が選ぶ)。 */
+var PLANS = {
+  "a2613bc10": {
+    name: "有賀睦人",
+    from: "2026-10-04",
+    category: "water",
+    phases: [
+      { from: 1, to: 3, label: "傾向をつかむ", items: "TREND" },
+      { from: 4, to: 8, label: "修正する", items: null, pendingNote: "4回目からのメニューは、3回目までの記録を見てコーチが決めます。決まるまでは1〜3回目と同じメニューです。" },
+      { from: 9, to: 9, label: "確認日", items: "TREND", check: true, note: "1〜3回目と同じメニューです。直ったかどうかを同じものさしで比べます。" }
+    ],
+    menus: {
+      TREND: [
+        { trickId: "inv_bc", grab: "position", name: "クロスバック", count: 2, speed: "fast", rule: "その日の調子とエアラインの確認。分からなければもう1本" },
+        { trickId: "oax_7", name: "コーク720", count: 10, speed: "fast", rule: "1本目は立つことを最優先" },
+        { trickId: "oax_7", grab: true, name: "コーク720＋グラブ", count: 6, speed: "fast", rule: "" },
+        { trickId: "inv_bl", name: "レイアウト", count: 1, speed: "slow", rule: "フルの前の確認" },
+        { trickId: "inv_bf", name: "フル", count: 5, speed: "slow", rule: "1本目は立つことを最優先" }
+      ]
+    }
+  }
+};
 var SPEED_LEVELS = [
 { key: "slow", label: "遅い", hint: "1エア寄り", color: "#8CA0B8" },
 { key: "normal", label: "普通", hint: "", color: "#4CC3F0" },
@@ -888,7 +948,7 @@ render();
 function emptyTechRow(category) {
 var defaultTrick = (typeof S !== "undefined" && S && S.trickLastUsed && (S.trickLastUsed !== "airtime" || category === "trampoline")) ? S.trickLastUsed : "rot_3";
 if (category === "trampoline") return { rowId: genRowId(), trickId: defaultTrick, grabCategory: "none", grabType: null, near: null, modifier: "none", nuki: false, unnatural: false, note: "", shareNote: false, kakari: false, reps: "", videos: [] };
-return { rowId: genRowId(), trickId: defaultTrick, grabCategory: "none", grabType: null, near: null, modifier: "none", nuki: false, unnatural: false, success: "", fail: "", note: "", shareNote: false, successVideos: [], failVideos: [], speedLevel: "normal" };
+return { rowId: genRowId(), trickId: defaultTrick, grabCategory: "none", grabType: null, near: null, modifier: "none", nuki: false, unnatural: false, success: "", fail: "", yure: "", wobbleDetail: [], note: "", shareNote: false, successVideos: [], failVideos: [], speedLevel: "" };
 }
 var S = {
 dashPeriod: "all",
@@ -1021,11 +1081,126 @@ function setEditRowNear(idx, v) { var r = S.editDraft.rows[idx]; r.near = (r.nea
 function openEditGrabModal(idx) { S.grabModalEditRowIdx = idx; render(); }
 function closeEditGrabModal() { S.grabModalEditRowIdx = null; render(); }
 function setRowModifier(idx, m) { S.rows[idx].modifier = m; render(); }
-function setRowSpeed(idx, v) { S.rows[idx].speedLevel = v; render(); }
+function setRowSpeed(idx, v) { var r = S.rows[idx]; r.speedLevel = (r.speedLevel === v ? "" : v); render(); }
 function toggleRowNuki(idx) { S.rows[idx].nuki = !S.rows[idx].nuki; render(); }
 function toggleRowUnnatural(idx) { S.rows[idx].unnatural = !S.rows[idx].unnatural; render(); }
 function toggleRowKakari(idx) { S.rows[idx].kakari = !S.rows[idx].kakari; render(); }
-function setRowField(idx, field, v) { S.rows[idx][field] = v; }
+
+function toggleRowWobbleTag(idx, tag) { wobbleToggle_(S.rows[idx], tag); render(); }
+function setRowWobbleSeverity(idx, tag, sev) { wobbleSev_(S.rows[idx], tag, sev); render(); }
+function toggleEditRowWobbleTag(idx, tag) { wobbleToggle_(S.editDraft.rows[idx], tag); render(); }
+function setEditRowWobbleSeverity(idx, tag, sev) { wobbleSev_(S.editDraft.rows[idx], tag, sev); render(); }
+function wobbleToggle_(r, tag) {
+r.wobbleDetail = r.wobbleDetail || [];
+var i = r.wobbleDetail.findIndex(function (w) { return w.tag === tag; });
+if (i >= 0) r.wobbleDetail.splice(i, 1); else r.wobbleDetail.push({ tag: tag, severity: 3 });
+}
+function wobbleSev_(r, tag, sev) {
+var w = (r.wobbleDetail || []).filter(function (x) { return x.tag === tag; })[0];
+if (w) w.severity = sev;
+}
+function rowYureCount_(r) { return r.yure === "" || r.yure === undefined || r.yure === null ? 0 : (Number(r.yure) || 0); }
+function renderYurePanelHtml(idx, row, toggleFnName, sevFnName) {
+if (rowYureCount_(row) <= 0) return "";
+var items = WOBBLE_TAGS.map(function (tag) {
+var w = (row.wobbleDetail || []).filter(function (x) { return x.tag === tag; })[0];
+var active = !!w;
+var sevHtml = "";
+if (active) {
+var sevChips = [1, 2, 3, 4, 5].map(function (n) {
+return '<button class="chip-btn sev-chip' + (w.severity === n ? " active" : "") + '" onclick="event.stopPropagation();' + sevFnName + "(" + idx + ",'" + tag + "'," + n + ')">' + n + "</button>";
+}).join("");
+sevHtml = '<div class="yure-sev-inline"><span class="yure-sev-label">強さ（1=少し 〜 5=大きい）</span><div class="inline-row">' + sevChips + "</div></div>";
+}
+return '<div class="yure-list-item' + (active ? " active" : "") + '" onclick="' + toggleFnName + "(" + idx + ",'" + tag + "')\"><div class=\"yure-list-item-head\"><span class=\"yure-check\">" + (active ? "✓" : "") + '</span><span class="yure-list-label">' + escHtml(tag) + "</span></div>" + sevHtml + "</div>";
+}).join("");
+return '<div class="yure-panel"><div class="sub-label" style="margin:0 0 2px;">ヨレの出方：該当するものをタップ（複数選択可・任意）</div>' + items + "</div>";
+}
+function cleanWobble_(r) { return rowYureCount_(r) > 0 ? (r.wobbleDetail || []).map(function (w) { return { tag: w.tag, severity: Number(w.severity) || 3 }; }) : []; }
+
+/* ---- 予定メニュー ---- */
+function planFor(athleteId) { return PLANS[athleteId] || null; }
+function planSessionNo(plan, athleteId, date) {
+var days = {};
+DATA.forEach(function (e) {
+if (e.athlete !== athleteId || e.category !== plan.category) return;
+if (!e.date || e.date < plan.from || e.date >= date) return;
+days[e.date] = true;
+});
+return Object.keys(days).length + 1;
+}
+function planPhase(plan, no) {
+var ph = null, last = null;
+plan.phases.forEach(function (p) { if (no >= p.from && no <= p.to) ph = p; });
+if (!ph) return null;
+var key = ph.items;
+if (!key) { // 未設定 → 直前で設定済みのメニュー
+plan.phases.forEach(function (p) { if (p.to < ph.from && p.items) last = p.items; });
+key = last;
+}
+return { phase: ph, items: key ? plan.menus[key] : null, pending: !ph.items };
+}
+function planItemLabel(it) {
+if (it.name) return it.name;
+var nm = trickLabel(it.trickId);
+if (it.grab === "position") nm += "（ポジション）";
+else if (it.grab) nm += "＋グラブ";
+return nm;
+}
+function renderPlanCardHtml() {
+if (S.category !== "water") return "";
+var plan = planFor(S.athlete);
+if (!plan || plan.category !== S.category) return "";
+if (S.date < plan.from) return "";
+var no = planSessionNo(plan, S.athlete, S.date);
+var pp = planPhase(plan, no);
+if (!pp || !pp.items) return '<div class="plan-card"><div class="plan-title">予定メニュー</div><div class="plan-sub">' + no + '回目：予定メニューの期間は終わりました。</div></div>';
+var total = pp.items.reduce(function (s, it) { return s + it.count; }, 0);
+var rows = pp.items.map(function (it, i) {
+var sp = SPEED_LEVELS.filter(function (x) { return x.key === it.speed; })[0];
+return '<div class="plan-item"><span class="no">' + (i + 1) + '</span><span class="nm">' + escHtml(planItemLabel(it)) + (it.rule ? '<span class="rule">' + escHtml(it.rule) + '</span>' : '') + '</span><span class="ct">' + it.count + '本<span class="sp">' + (sp ? escHtml(sp.label + (sp.hint ? "・" + sp.hint : "")) : "") + '</span></span></div>';
+}).join("");
+return '<div class="plan-card">' +
+'<div class="plan-head"><span class="plan-title">今日の予定メニュー ' + no + '回目</span><span class="plan-phase' + (pp.phase.check ? " check" : "") + '">' + escHtml(pp.phase.label) + '</span></div>' +
+(pp.pending && pp.phase.pendingNote ? '<div class="plan-sub">' + escHtml(pp.phase.pendingNote) + '</div>' : '') +
+(pp.phase.note ? '<div class="plan-sub">' + escHtml(pp.phase.note) + '</div>' : '') +
+rows +
+'<div class="plan-sub">合計 ' + total + '本</div>' +
+'<button class="plan-btn" onclick="applyPlan()">この予定を技ログに入れる</button>' +
+'<div class="plan-note">入れたあとは、各技の「成功」と「ヨレ」の本数だけ入れれば、失敗は残りの本数で自動で入ります。本数や技が変わったら、そのまま直してください。</div>' +
+'</div>';
+}
+function applyPlan() {
+var plan = planFor(S.athlete); if (!plan) return;
+var pp = planPhase(plan, planSessionNo(plan, S.athlete, S.date));
+if (!pp || !pp.items) return;
+var hasInput = S.rows.some(function (r) { return r.success !== "" || r.fail !== "" || rowYureCount_(r) > 0; });
+if (hasInput && !confirm("いま入っている技ログを、予定メニューに置きかえますか？")) return;
+S.rows = pp.items.map(function (it) {
+var r = emptyTechRow("water");
+r.trickId = it.trickId;
+if (it.grab === "position") { r.grabCategory = "position"; }
+else if (it.grab) { r.grabCategory = "grab"; }
+r.modifier = deriveModifier(r.grabCategory, r.grabType);
+r.speedLevel = it.speed || "";
+r.plannedTotal = it.count;
+r.planRule = it.rule || "";
+return r;
+});
+render();
+}
+
+function setRowField(idx, field, v) {
+var r = S.rows[idx];
+r[field] = v;
+// 予定メニューから入れた行は、失敗を「予定本数 − 成功 − ヨレ」で自動にする(本人が失敗を直したら以後は自動にしない)。
+if (field === "fail") { r._failManual = true; return; }
+if (r.plannedTotal && !r._failManual && (field === "success" || field === "yure")) {
+var sv = r.success === "" ? 0 : (Number(r.success) || 0);
+var yv = r.yure === "" || r.yure === undefined ? 0 : (Number(r.yure) || 0);
+r.fail = (r.success === "" && (r.yure === "" || r.yure === undefined)) ? "" : String(Math.max(0, r.plannedTotal - sv - yv));
+}
+}
 
 /* 記録全体のメモを「コーチに送る」かどうかのトグル。
    メモが空のときは出さない(書いていないのに押せてしまうのを防ぐ)。
@@ -1058,8 +1233,8 @@ validRows = S.rows.filter(function (r) { if (r.trickId === "airtime") { return r
 return { rowId: r.rowId, note: r.note, trickId: r.trickId, trickLabel: trickLabel(r.trickId), grabType: r.grabCategory === "grab" ? (r.grabType || "") : "", near: r.near || "", modifier: r.modifier, nuki: !!r.nuki, unnatural: !!r.unnatural, kakari: !!r.kakari, reps: r.trickId === "airtime" ? 10 : (Number(r.reps) || 0), airtimeSeconds: r.trickId === "airtime" ? (Number(r.airtimeSeconds) || 0) : '', _videoFiles: [{ type: "single", items: (r.videos || []).filter(function (v) { return v.file; }) }] };
 });
 } else {
-validRows = S.rows.filter(function (r) { return ((r.success !== "" && Number(r.success) >= 0) || (r.fail !== "" && Number(r.fail) >= 0)); }).map(function (r) {
-return { rowId: r.rowId, note: r.note, trickId: r.trickId, trickLabel: trickLabel(r.trickId), grabType: r.grabCategory === "grab" ? (r.grabType || "") : "", near: r.near || "", modifier: r.modifier, nuki: !!r.nuki, unnatural: !!r.unnatural, success: Number(r.success) || 0, fail: Number(r.fail) || 0, speedLevel: r.speedLevel || "normal", _videoFiles: [{ type: "success", items: (r.successVideos || []).filter(function (v) { return v.file; }) }, { type: "fail", items: (r.failVideos || []).filter(function (v) { return v.file; }) }] };
+validRows = S.rows.filter(function (r) { return ((r.success !== "" && Number(r.success) >= 0) || (r.fail !== "" && Number(r.fail) >= 0) || rowYureCount_(r) > 0); }).map(function (r) {
+return { rowId: r.rowId, note: r.note, trickId: r.trickId, trickLabel: trickLabel(r.trickId), grabType: r.grabCategory === "grab" ? (r.grabType || "") : "", near: r.near || "", modifier: r.modifier, nuki: !!r.nuki, unnatural: !!r.unnatural, kakari: !!r.kakari, success: Number(r.success) || 0, fail: Number(r.fail) || 0, yure: rowYureCount_(r), wobbleDetail: cleanWobble_(r), speedLevel: r.speedLevel || "", _videoFiles: [{ type: "success", items: (r.successVideos || []).filter(function (v) { return v.file; }) }, { type: "fail", items: (r.failVideos || []).filter(function (v) { return v.file; }) }] };
 });
 }
 if (validRows.length === 0) return;
@@ -1075,7 +1250,7 @@ var athleteId = S.athlete;
 var category = S.category;
 // アップロードキューに載せる動画は保存後に実行するので、送信payloadからは除いておく。
 var rowsForServer = validRows.map(function (r) {
-return { rowId: r.rowId, trickId: r.trickId, trickLabel: r.trickLabel, grabType: r.grabType || "", near: r.near || "", modifier: r.modifier, nuki: r.nuki, unnatural: r.unnatural, success: r.success, fail: r.fail, reps: r.reps, kakari: r.kakari, airtimeSeconds: r.airtimeSeconds, speedLevel: r.speedLevel, note: (r.note || "").trim(), shareNote: r.shareNote };
+return { rowId: r.rowId, trickId: r.trickId, trickLabel: r.trickLabel, grabType: r.grabType || "", near: r.near || "", modifier: r.modifier, nuki: r.nuki, unnatural: r.unnatural, success: r.success, fail: r.fail, reps: r.reps, kakari: r.kakari, airtimeSeconds: r.airtimeSeconds, speedLevel: r.speedLevel, yure: r.yure, wobbleDetail: r.wobbleDetail, note: (r.note || "").trim(), shareNote: r.shareNote };
 });
 // 同じ選手・種類・日付の記録がすでにあれば、サーバー側で既存の記録にまとめられる(合算)。
 var payload = {
@@ -1220,10 +1395,10 @@ return '<div class="tech-note-row"><textarea class="note-textarea tech-note-inpu
 
 function renderSpeedSelectHtml(idx, row, setterFnName) {
 var pills = SPEED_LEVELS.map(function (lv) {
-var active = (row.speedLevel || "normal") === lv.key;
+var active = (row.speedLevel || "") === lv.key;
 return '<button type="button" class="chip-btn' + (active ? " active" : "") + '" style="flex:1;font-size:11px;padding:8px 3px;" onclick="' + setterFnName + "(" + idx + ",'" + lv.key + "')\">" + escHtml(lv.label) + '<span style="display:block;font-size:8px;font-weight:400;opacity:.75;">' + (lv.hint ? escHtml(lv.hint) : " ") + "</span></button>";
 }).join("");
-return '<div class="sub-label" style="margin-top:8px;">進入スピード</div><div class="inline-row">' + pills + "</div>";
+return '<div class="sub-label" style="margin-top:8px;">進入スピード' + (row.speedLevel ? '' : '<span style="color:#FFB870;">（未選択）</span>') + '</div><div class="inline-row">' + pills + "</div>";
 }
 
 function renderTechRow(row, idx) {
@@ -1242,7 +1417,8 @@ renderTrickSelect(idx, row) +
 var countFields = S.category === "trampoline"
 ? '<div class="num-field"><span class="num-field-label">本数</span><input class="num-input" type="number" inputmode="numeric" placeholder="0" value="' + escAttr(row.reps) + '" oninput="setRowField(' + idx + ",'reps',this.value)\" onblur=\"render()\"></div>"
 : '<div class="num-field"><span class="num-field-label">成功本数</span><input class="num-input" type="number" inputmode="numeric" placeholder="0" value="' + escAttr(row.success) + '" oninput="setRowField(' + idx + ",'success',this.value)\" onblur=\"render()\"></div>" +
-'<div class="num-field"><span class="num-field-label">失敗本数</span><input class="num-input" type="number" inputmode="numeric" placeholder="0" value="' + escAttr(row.fail) + '" oninput="setRowField(' + idx + ",'fail',this.value)\" onblur=\"render()\"></div>";
+'<div class="num-field"><span class="num-field-label">失敗本数' + (row.plannedTotal && !row._failManual ? '（自動）' : '') + '</span><input class="num-input" type="number" inputmode="numeric" placeholder="0" value="' + escAttr(row.fail) + '" oninput="setRowField(' + idx + ",'fail',this.value)\" onblur=\"render()\"></div>" +
+'<div class="num-field"><span class="num-field-label">ヨレ本数</span><input class="num-input" type="number" inputmode="numeric" placeholder="0" value="' + escAttr(row.yure) + '" oninput="setRowField(' + idx + ",'yure',this.value)\" onblur=\"render()\"></div>";
 var modifierChips = renderGrabCategoryChipsHtml(idx, row, "setRowGrabCategory");
 var nukiChip = '<button class="chip-btn ' + (row.nuki ? "active" : "") + '" style="flex:1;font-size:10px;padding:8px 3px;" onclick="toggleRowNuki(' + idx + ')">抜き<span style="display:block;font-size:8px;font-weight:400;opacity:.75;">(台の踏切抜き)</span></button>';
 var unnaturalChip = '<button class="chip-btn ' + (row.unnatural ? "active" : "") + '" style="flex:1;font-size:10px;padding:8px 3px;" onclick="toggleRowUnnatural(' + idx + ')">アンナチュラル<span style="display:block;font-size:8px;font-weight:400;opacity:.75;">(逆回転)</span></button>';
@@ -1263,6 +1439,8 @@ renderGrabPickerHtml(idx, row, "setRowGrab", "setRowNear", "openGrabModal") +
 '<div class="inline-row">' + nukiChip + unnaturalChip + kakariChip + "</div>" +
 '<div class="sub-label">「抜き」は台の踏切を抜いて飛ぶデュアルモーグル練習用、「アンナチュラル」は通常と逆回転で行う技。どちらもグラブ・ポジションや、お互いと組み合わせて選択できます。（G/gはグラブの種類から自動で決まります）</div>' +
 '<div class="inline-row">' + countFields + "</div>" +
+(S.category === "trampoline" ? "" : renderYurePanelHtml(idx, row, "toggleRowWobbleTag", "setRowWobbleSeverity")) +
+(row.plannedTotal ? '<div class="sub-label" style="color:#4CC3F0;">予定 ' + row.plannedTotal + '本' + (row.planRule ? '：' + escHtml(row.planRule) : '') + '</div>' : '') +
 (S.category === "trampoline" ? "" : renderSpeedSelectHtml(idx, row, "setRowSpeed")) +
 (S.category === "trampoline"
 ? '<div class="video-row single">' + renderVideoSlot(idx, "single", "動画(任意)") + "</div>"
@@ -1336,6 +1514,7 @@ return (
 '<div class="sub-label">台のサイズ</div><div class="chip-grid">' + kickerChips + "</div></div>"
 : ""
 ) +
+renderPlanCardHtml() +
 '<div><label class="field-label">技ログ</label><div class="tech-row-list">' + rowsHtml + "</div>" +
 '<button class="add-row-btn" onclick="addTechRow()">' + iconPlus(14, COLORS.ice) + " 技を追加</button></div>" +
 '<div><label class="field-label">メモ(任意)</label><textarea class="note-textarea" rows="2" placeholder="感覚、風向き、恐怖心など" oninput="setNote(this.value)">' + escHtml(S.note) + '</textarea>' + renderShareToggleHtml() + '</div>' +
@@ -1352,7 +1531,7 @@ function getEntries(athleteId, category) {
 return DATA.filter(function (e) { return e.athlete === athleteId && e.category === category; })
 .slice().sort(function (a, b) { return a.date.localeCompare(b.date); });
 }
-function rowTotal(r) { return r.reps !== undefined ? Number(r.reps) || 0 : (Number(r.success) || 0) + (Number(r.fail) || 0); }
+function rowTotal(r) { return r.reps !== undefined ? Number(r.reps) || 0 : (Number(r.success) || 0) + (Number(r.fail) || 0) + (Number(r.yure) || 0); }
 function rowSuccess(r) { return r.reps !== undefined ? null : Number(r.success) || 0; }
 function entryTotal(entry) {
 return entry.rows.reduce(function (sum, r) { return sum + rowTotal(r); }, 0);
@@ -2195,7 +2374,10 @@ unnatural: !!r.unnatural,
 success: r.success,
 fail: r.fail,
 reps: r.reps,
-speedLevel: r.speedLevel || "normal",
+kakari: !!r.kakari,
+yure: r.yure ? String(r.yure) : "",
+wobbleDetail: (r.wobbleDetail || []).map(function (w) { return { tag: w.tag, severity: Number(w.severity) || 3 }; }),
+speedLevel: r.speedLevel || "",
 note: r.note || "",
 };
 }),
@@ -2219,7 +2401,7 @@ if (S.editDraft.rows.length > 1) { S.editDraft.rows = S.editDraft.rows.filter(fu
 }
 function setEditRowTrick(idx, v) { S.editDraft.rows[idx].trickId = v; render(); }
 function setEditRowModifier(idx, m) { S.editDraft.rows[idx].modifier = m; render(); }
-function setEditRowSpeed(idx, v) { S.editDraft.rows[idx].speedLevel = v; render(); }
+function setEditRowSpeed(idx, v) { var r = S.editDraft.rows[idx]; r.speedLevel = (r.speedLevel === v ? "" : v); render(); }
 function toggleEditRowNuki(idx) { S.editDraft.rows[idx].nuki = !S.editDraft.rows[idx].nuki; render(); }
 function toggleEditRowUnnatural(idx) { S.editDraft.rows[idx].unnatural = !S.editDraft.rows[idx].unnatural; render(); }
 function toggleEditRowKakari(idx) { S.editDraft.rows[idx].kakari = !S.editDraft.rows[idx].kakari; render(); }
@@ -2234,8 +2416,8 @@ validRows = S.editDraft.rows.filter(function (r) { if (r.trickId === "airtime") 
 return { rowId: r.rowId || genRowId(), trickId: r.trickId, trickLabel: trickLabel(r.trickId), grabType: r.grabCategory === "grab" ? (r.grabType || "") : "", near: r.near || "", modifier: r.modifier, nuki: !!r.nuki, unnatural: !!r.unnatural, kakari: !!r.kakari, reps: r.trickId === "airtime" ? 10 : (Number(r.reps) || 0), airtimeSeconds: r.trickId === "airtime" ? (Number(r.airtimeSeconds) || 0) : '', note: (r.note || "").trim() };
 });
 } else {
-validRows = S.editDraft.rows.filter(function (r) { return ((r.success !== "" && r.success !== undefined && Number(r.success) >= 0) || (r.fail !== "" && r.fail !== undefined && Number(r.fail) >= 0)); }).map(function (r) {
-return { rowId: r.rowId || genRowId(), trickId: r.trickId, trickLabel: trickLabel(r.trickId), grabType: r.grabCategory === "grab" ? (r.grabType || "") : "", near: r.near || "", modifier: r.modifier, nuki: !!r.nuki, unnatural: !!r.unnatural, success: Number(r.success) || 0, fail: Number(r.fail) || 0, speedLevel: r.speedLevel || "normal", note: (r.note || "").trim() };
+validRows = S.editDraft.rows.filter(function (r) { return ((r.success !== "" && r.success !== undefined && Number(r.success) >= 0) || (r.fail !== "" && r.fail !== undefined && Number(r.fail) >= 0) || rowYureCount_(r) > 0); }).map(function (r) {
+return { rowId: r.rowId || genRowId(), trickId: r.trickId, trickLabel: trickLabel(r.trickId), grabType: r.grabCategory === "grab" ? (r.grabType || "") : "", near: r.near || "", modifier: r.modifier, nuki: !!r.nuki, unnatural: !!r.unnatural, kakari: !!r.kakari, success: Number(r.success) || 0, fail: Number(r.fail) || 0, yure: rowYureCount_(r), wobbleDetail: cleanWobble_(r), speedLevel: r.speedLevel || "", note: (r.note || "").trim() };
 });
 }
 if (validRows.length === 0) return;
@@ -2301,7 +2483,8 @@ var code = composedCode(row.trickId, row.modifier);
 var countFields = category === "trampoline"
 ? '<div class="num-field"><span class="num-field-label">本数</span><input class="num-input" type="number" inputmode="numeric" placeholder="0" value="' + escAttr(row.reps) + '" oninput="setEditRowField(' + idx + ",'reps',this.value)\"></div>"
 : '<div class="num-field"><span class="num-field-label">成功本数</span><input class="num-input" type="number" inputmode="numeric" placeholder="0" value="' + escAttr(row.success) + '" oninput="setEditRowField(' + idx + ",'success',this.value)\"></div>" +
-'<div class="num-field"><span class="num-field-label">失敗本数</span><input class="num-input" type="number" inputmode="numeric" placeholder="0" value="' + escAttr(row.fail) + '" oninput="setEditRowField(' + idx + ",'fail',this.value)\"></div>";
+'<div class="num-field"><span class="num-field-label">失敗本数</span><input class="num-input" type="number" inputmode="numeric" placeholder="0" value="' + escAttr(row.fail) + '" oninput="setEditRowField(' + idx + ",'fail',this.value)\"></div>" +
+'<div class="num-field"><span class="num-field-label">ヨレ本数</span><input class="num-input" type="number" inputmode="numeric" placeholder="0" value="' + escAttr(row.yure) + '" oninput="setEditRowField(' + idx + ",'yure',this.value)\" onblur=\"render()\"></div>";
 var modifierChips = renderGrabCategoryChipsHtml(idx, row, "setEditRowGrabCategory");
 var nukiChip = '<button class="chip-btn ' + (row.nuki ? "active" : "") + '" style="flex:1;font-size:10px;padding:8px 3px;" onclick="toggleEditRowNuki(' + idx + ')">抜き</button>';
 var unnaturalChip = '<button class="chip-btn ' + (row.unnatural ? "active" : "") + '" style="flex:1;font-size:10px;padding:8px 3px;" onclick="toggleEditRowUnnatural(' + idx + ')">アンナチュラル</button>';
@@ -2326,6 +2509,7 @@ trickSelect +
 renderGrabPickerHtml(idx, row, "setEditRowGrab", "setEditRowNear", "openEditGrabModal") +
 '<div class="inline-row">' + nukiChip + unnaturalChip + "</div>" +
 '<div class="inline-row">' + countFields + "</div>" +
+(category === "trampoline" ? "" : renderYurePanelHtml(idx, row, "toggleEditRowWobbleTag", "setEditRowWobbleSeverity")) +
 (category === "trampoline" ? "" : renderSpeedSelectHtml(idx, row, "setEditRowSpeed")) +
 (function () {
 var rowId = row.rowId || "";
