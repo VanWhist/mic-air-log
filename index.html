@@ -231,6 +231,8 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.7); cur
 .plan-item { display: grid; grid-template-columns: 20px 1fr auto; gap: 8px; align-items: start; background: #16293F; border-radius: 8px; padding: 8px 10px; }
 .plan-item .no { font-size: 11px; font-weight: 700; color: #4CC3F0; padding-top: 1px; }
 .plan-item .nm { font-size: 13px; font-weight: 700; color: #EAF1F8; }
+.plan-item .start, .tally-meta .start { display: block; font-size: 11px; font-weight: 700; color: #7CD98A; margin-top: 2px; }
+.tally-noyure { text-align: center; font-size: 11px; color: #9FB3C8; }
 .plan-item .rule { display: block; font-size: 11px; font-weight: 400; color: #FFB870; margin-top: 2px; }
 .plan-item .ct { font-size: 13px; font-weight: 700; color: #EAF1F8; white-space: nowrap; }
 .plan-item .sp { display: block; font-size: 10px; font-weight: 400; color: #9FB3C8; text-align: right; }
@@ -830,6 +832,24 @@ var PLANS = {
         { trickId: "inv_bf", name: "フル", count: 5, speed: "slow", rule: "1本目は立つことを最優先" }
       ]
     }
+  },
+  /* 2026-10 濵田匠真(Van 2026-10-02)：10月は360・クロスバック・フルで「フルを雪上でかけられる」ように。
+     ヨレはフルだけ記入(yure:false の技は成功／失敗のみ)。スタート位置はコーチが決める(Van：360とフルは1エアの位置、クロスバックは2エアの位置。start が空なら「コーチに確認」と出る)。回数の合計は未定のため、確認日はまだ置いていない。 */
+  "a261025bb": {
+    name: "濵田匠真",
+    from: "2026-10-17",
+    category: "water",
+    phases: [
+      { from: 1, to: 3, label: "傾向をつかむ", items: "TREND" },
+      { from: 4, to: 99, label: "修正する", items: null, pendingNote: "4回目からのメニューは、3回目までの記録を見てコーチが決めます。決まるまでは1〜3回目と同じメニューです。" }
+    ],
+    menus: {
+      TREND: [
+        { trickId: "inv_bc", grab: "position", name: "クロスバック", count: 5, speed: "fast", rule: "", yure: false, start: "2エアの位置" },
+        { trickId: "rot_3", name: "360（ヘリ）", count: 5, speed: "slow", rule: "", yure: false, start: "1エアの位置" },
+        { trickId: "inv_bf", name: "フル", count: 15, speed: "slow", rule: "", start: "1エアの位置" }
+      ]
+    }
   }
 };
 var SPEED_LEVELS = [
@@ -1206,6 +1226,10 @@ key = last;
 }
 return { phase: ph, items: key ? plan.menus[key] : null, pending: !ph.items };
 }
+function planStartText_(it) {
+if (!it || !Object.prototype.hasOwnProperty.call(it, "start")) return "";
+return "スタート：" + (it.start ? it.start : "コーチに確認");
+}
 function planItemLabel(it) {
 if (it.name) return it.name;
 var nm = trickLabel(it.trickId);
@@ -1225,7 +1249,7 @@ var total = pp.items.reduce(function (s, it) { return s + it.count; }, 0);
 var stored = tallyStoredFor_(S.athlete, S.date);
 var rows = pp.items.map(function (it, i) {
 var sp = SPEED_LEVELS.filter(function (x) { return x.key === it.speed; })[0];
-return '<div class="plan-item"><span class="no">' + (i + 1) + '</span><span class="nm">' + escHtml(planItemLabel(it)) + (it.rule ? '<span class="rule">' + escHtml(it.rule) + '</span>' : '') + '</span><span class="ct">' + it.count + '本<span class="sp">' + (sp ? escHtml(sp.label + (sp.hint ? "・" + sp.hint : "")) : "") + '</span></span></div>';
+return '<div class="plan-item"><span class="no">' + (i + 1) + '</span><span class="nm">' + escHtml(planItemLabel(it)) + (planStartText_(it) ? '<span class="start">' + escHtml(planStartText_(it)) + '</span>' : '') + (it.rule ? '<span class="rule">' + escHtml(it.rule) + '</span>' : '') + '</span><span class="ct">' + it.count + '本<span class="sp">' + (sp ? escHtml(sp.label + (sp.hint ? "・" + sp.hint : "")) : "") + '</span></span></div>';
 }).join("");
 return '<div class="plan-card">' +
 '<div class="plan-head"><span class="plan-title">今日の予定メニュー ' + no + '回目</span><span class="plan-phase' + (pp.phase.check ? " check" : "") + '">' + escHtml(pp.phase.label) + '</span></div>' +
@@ -1256,6 +1280,7 @@ r.modifier = deriveModifier(r.grabCategory, r.grabType);
 r.speedLevel = it.speed || "";
 r.plannedTotal = it.count;
 r.planRule = it.rule || "";
+r.planStart = planStartText_(it);
 return r;
 });
 render();
@@ -1284,6 +1309,8 @@ var pp = planPhase(plan, planSessionNo(plan, S.athlete, S.date));
 if (!pp || !pp.items) return;
 S.tally = { athlete: S.athlete, date: S.date, cur: 0, items: pp.items.map(function (it) {
 var o = { trickId: it.trickId, grab: it.grab || "", name: planItemLabel(it), count: it.count, speed: it.speed || "", rule: it.rule || "", seq: [] };
+if (it.yure === false) o.noYure = true;
+if (Object.prototype.hasOwnProperty.call(it, "start")) o.start = it.start || "";
 if (it.grab === true) { var lg = tallyLastGrab_(S.athlete, it.trickId); o.grabType = lg ? lg.grabType : null; o.near = lg ? (lg.near || null) : null; o.grabFromLast = !!lg; }
 return o;
 }) };
@@ -1317,6 +1344,7 @@ return g.label + (it.near === "near" ? "・ニア" : it.near === "regular" ? "�
 function tallyCurItem_() { var t = S.tally; return (t && t.cur < t.items.length) ? t.items[t.cur] : null; }
 function tallyMark(r) {
 var it = tallyCurItem_(); if (!it || it.seq.length >= it.count) return;
+if (r === "y" && it.noYure) return;
 it.seq.push(r === "y" ? { r: "y", w: [] } : { r: r });
 tallySave_(); tallyRender_();
 }
@@ -1368,6 +1396,7 @@ r.modifier = deriveModifier(r.grabCategory, r.grabType);
 r.speedLevel = it.speed || "";
 r.plannedTotal = it.count;
 r.planRule = it.rule || "";
+r.planStart = planStartText_(it);
 var c = tallyCounts_(it), wmap = {};
 it.seq.forEach(function (j) {
 (j.r === "y" ? (j.w || []) : []).forEach(function (w) {
@@ -1403,8 +1432,8 @@ else out += '<span class="tally-dot' + (i === it.seq.length ? " next" : "") + '"
 }
 return '<div class="tally-dots">' + out + "</div>";
 }
-function tallySumHtml_(c) {
-return '<div class="tally-sum">成功 <span class="s">' + c.s + '</span>・失敗 <span class="f">' + c.f + '</span>・ヨレ <span class="y">' + c.y + "</span></div>";
+function tallySumHtml_(c, noYure) {
+return '<div class="tally-sum">成功 <span class="s">' + c.s + '</span>・失敗 <span class="f">' + c.f + '</span>' + (noYure ? '' : '・ヨレ <span class="y">' + c.y + '</span>') + "</div>";
 }
 function renderTallyHtml() {
 var t = S.tally;
@@ -1420,7 +1449,7 @@ var rowsHtml = t.items.map(function (it) {
 var c = tallyCounts_(it);
 var gl = it.grab === true ? (it.grabType ? "（" + tallyGrabLabel_(it) + "）" : "（グラブ未選択）") : "";
 var seqTxt = it.seq.map(function (j) { return j.r === "s" ? "○" : j.r === "f" ? "×" : "ヨ"; }).join("");
-return "<tr><td>" + escHtml(it.name + gl) + (seqTxt ? '<div class="tally-seq">' + seqTxt + "</div>" : "") + "</td><td>" + it.seq.length + "/" + it.count + "</td><td>" + c.s + "</td><td>" + c.f + "</td><td>" + c.y + "</td></tr>";
+return "<tr><td>" + escHtml(it.name + gl) + (seqTxt ? '<div class="tally-seq">' + seqTxt + "</div>" : "") + "</td><td>" + it.seq.length + "/" + it.count + "</td><td>" + c.s + "</td><td>" + c.f + "</td><td>" + (it.noYure ? "−" : c.y) + "</td></tr>";
 }).join("");
 return '<div class="section tally">' + head + steps +
 '<div class="tally-card"><div class="tally-name">今日のまとめ</div>' +
@@ -1456,16 +1485,16 @@ var main = done
 : '<div class="tally-count"><b>' + (it.seq.length + 1) + "</b>本目 / " + it.count + "本</div>";
 var btns = done
 ? '<div class="tally-btns"><button class="tally-btn next" onclick="tallyNext()">' + (isLast ? "まとめを見る ▶" : "次の技へ ▶") + "</button></div>"
-: '<div class="tally-btns"><button class="tally-btn s" onclick="tallyMark(\'s\')">成功</button><button class="tally-btn f" onclick="tallyMark(\'f\')">失敗</button><button class="tally-btn y" onclick="tallyMark(\'y\')">ヨレ</button></div>';
+: '<div class="tally-btns"><button class="tally-btn s" onclick="tallyMark(\'s\')">成功</button><button class="tally-btn f" onclick="tallyMark(\'f\')">失敗</button>' + (it.noYure ? '' : '<button class="tally-btn y" onclick="tallyMark(\'y\')">ヨレ</button>') + '</div>' + (it.noYure ? '<div class="tally-noyure">この技は「成功」か「失敗」だけ記入します</div>' : '');
 var subs = '<div class="tally-sub-btns"><button onclick="tallyUndo()"' + (totalJumps ? "" : " disabled") + ">↶ 1本戻す</button>" +
 (done ? '<button onclick="tallyExtra()">＋もう1本</button>' : '<button onclick="tallyNext()">' + (isLast ? "ここで終えてまとめへ" : "この技はここまで ▶") + "</button>") + "</div>";
 return '<div class="section tally">' + head + steps +
 '<div class="tally-card">' +
-'<div><div class="tally-name">' + escHtml(it.name) + '</div><div class="tally-meta">' + (sp ? "スピード：" + escHtml(sp.label + (sp.hint ? "（" + sp.hint + "）" : "")) : "") + (it.rule ? '<span class="rule">' + escHtml(it.rule) + "</span>" : "") + "</div></div>" +
+'<div><div class="tally-name">' + escHtml(it.name) + '</div><div class="tally-meta">' + (sp ? "スピード：" + escHtml(sp.label + (sp.hint ? "（" + sp.hint + "）" : "")) : "") + (planStartText_(it) ? '<span class="start">' + escHtml(planStartText_(it)) + '</span>' : '') + (it.rule ? '<span class="rule">' + escHtml(it.rule) + "</span>" : "") + "</div></div>" +
 (it.grab === true ? (it.grabType
 ? '<button class="tally-grab" onclick="tallyOpenGrab()">グラブ：<b>' + escHtml(tallyGrabLabel_(it)) + '</b>' + (it.grabFromLast ? '（前回と同じ）' : '') + '<span>変更</span></button>'
 : '<button class="tally-grab warn" onclick="tallyOpenGrab()">グラブの種類を選ぶ（未選択）<span>選ぶ</span></button>') : "") +
-main + tallyDotHtml_(it) + tallySumHtml_(c) + btns + yureHtml + subs +
+main + tallyDotHtml_(it) + tallySumHtml_(c, it.noYure) + btns + yureHtml + subs +
 "</div></div>";
 }
 
@@ -1720,7 +1749,7 @@ renderGrabPickerHtml(idx, row, "setRowGrab", "setRowNear", "openGrabModal") +
 '<div class="sub-label">「抜き」は台の踏切を抜いて飛ぶデュアルモーグル練習用、「アンナチュラル」は通常と逆回転で行う技。どちらもグラブ・ポジションや、お互いと組み合わせて選択できます。（G/gはグラブの種類から自動で決まります）</div>' +
 '<div class="inline-row">' + countFields + "</div>" +
 (S.category === "trampoline" ? "" : renderYurePanelHtml(idx, row, "toggleRowWobbleTag", "setRowWobbleSeverity")) +
-(row.plannedTotal ? '<div class="sub-label" style="color:#4CC3F0;">予定 ' + row.plannedTotal + '本' + (row.planRule ? '：' + escHtml(row.planRule) : '') + '</div>' : '') +
+(row.plannedTotal ? '<div class="sub-label" style="color:#4CC3F0;">予定 ' + row.plannedTotal + '本' + (row.planStart ? '・' + escHtml(row.planStart) : '') + (row.planRule ? '：' + escHtml(row.planRule) : '') + '</div>' : '') +
 (row.seq && row.seq.length ? '<div class="sub-label">順番：<span class="tally-seq">' + row.seq.map(function (j) { return j.r === "s" ? "○" : j.r === "f" ? "×" : "ヨ"; }).join("") + '</span>' + (seqForSave_(row).length ? '' : '<span style="color:#FFB870;">（本数を直したので順番は保存しません）</span>') + '</div>' : '') +
 (S.category === "trampoline" ? "" : renderSpeedSelectHtml(idx, row, "setRowSpeed")) +
 (S.category === "trampoline"
