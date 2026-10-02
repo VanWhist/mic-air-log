@@ -236,6 +236,59 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.7); cur
 .plan-item .sp { display: block; font-size: 10px; font-weight: 400; color: #9FB3C8; text-align: right; }
 .plan-btn { width: 100%; padding: 12px; border-radius: 10px; border: none; background: #4CC3F0; color: #062230; font-size: 14px; font-weight: 700; cursor: pointer; }
 .plan-note { font-size: 11px; color: #9FB3C8; line-height: 1.5; }
+.plan-btn.sub { background: transparent; border: 1px solid #2E5C8A; color: #4CC3F0; font-size: 12px; padding: 9px; }
+.tally { gap: 10px; }
+.tally-top { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #9FB3C8; }
+.tally-top b { color: #EAF1F8; }
+.tally-link { margin-left: auto; background: transparent; border: 1px solid #26374E; color: #9FB3C8; border-radius: 8px; padding: 5px 10px; font-size: 11px; cursor: pointer; }
+.tally-steps { display: flex; gap: 4px; overflow-x: auto; padding-bottom: 2px; }
+.tally-step { flex: 0 0 auto; background: #131F30; border: 1px solid #26374E; color: #9FB3C8; border-radius: 8px; padding: 5px 8px; font-size: 10px; line-height: 1.3; cursor: pointer; text-align: left; }
+.tally-step b { display: block; color: #EAF1F8; font-size: 11px; }
+.tally-step.cur { border-color: #4CC3F0; background: #10233A; }
+.tally-step.done b { color: #7CD98A; }
+.tally-card { background: #10233A; border: 1px solid #2E5C8A; border-radius: 14px; padding: 14px 12px; display: flex; flex-direction: column; gap: 10px; }
+.tally-name { font-size: 20px; font-weight: 800; color: #EAF1F8; }
+.tally-meta { font-size: 12px; color: #9FB3C8; margin-top: 2px; }
+.tally-meta .rule { color: #FFB870; display: block; margin-top: 2px; }
+.tally-count { font-size: 15px; color: #9FB3C8; text-align: center; }
+.tally-count b { font-size: 44px; color: #EAF1F8; font-weight: 800; margin-right: 2px; }
+.tally-count.done { font-size: 18px; font-weight: 800; color: #7CD98A; padding: 10px 0; }
+.tally-dots { display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; }
+.tally-dot { width: 22px; height: 22px; border-radius: 50%; border: 2px solid #37506E; font-size: 10px; font-weight: 800; display: flex; align-items: center; justify-content: center; color: #062230; }
+.tally-dot.s { background: #7CD98A; border-color: #7CD98A; }
+.tally-dot.f { background: #E5484D; border-color: #E5484D; color: #fff; }
+.tally-dot.y { background: #FF9645; border-color: #FF9645; color: #23140A; }
+.tally-dot.next { border-color: #4CC3F0; }
+.tally-sum { text-align: center; font-size: 12px; color: #9FB3C8; }
+.tally-sum .s { color: #7CD98A; font-weight: 700; } .tally-sum .f { color: #E5484D; font-weight: 700; } .tally-sum .y { color: #FF9645; font-weight: 700; }
+.tally-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.tally-btn { border: none; border-radius: 14px; padding: 22px 6px; font-size: 22px; font-weight: 800; cursor: pointer; touch-action: manipulation; -webkit-user-select: none; user-select: none; }
+.tally-btn:active { transform: scale(.97); }
+.tally-btn.s { background: #7CD98A; color: #062230; }
+.tally-btn.f { background: #E5484D; color: #fff; }
+.tally-btn.y { background: #FF9645; color: #23140A; grid-column: 1 / span 2; padding: 16px 6px; font-size: 20px; }
+.tally-btn.next { background: #4CC3F0; color: #062230; grid-column: 1 / span 2; font-size: 18px; padding: 18px 6px; }
+.tally-sub-btns { display: flex; gap: 8px; }
+.tally-sub-btns button { flex: 1; background: transparent; border: 1px solid #26374E; color: #9FB3C8; border-radius: 10px; padding: 10px 4px; font-size: 12px; cursor: pointer; }
+.tally-sub-btns button:disabled { opacity: .35; }
+.tally-yure { background: #131F30; border: 1px solid #7a4a1f; border-radius: 10px; padding: 8px; display: flex; flex-direction: column; gap: 6px; }
+.tally-yure-title { font-size: 12px; font-weight: 700; color: #FFB870; }
+.tally-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.tally-tag { background: #1B2C42; border: 1px solid #26374E; color: #EAF1F8; border-radius: 16px; padding: 8px 10px; font-size: 12px; cursor: pointer; }
+.tally-tag.on { border-color: #FF9645; background: #2a1f14; color: #FFB870; font-weight: 700; }
+.tally-sevs { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; font-size: 11px; color: #9FB3C8; }
+.tally-sevs button { min-width: 30px; background: #1B2C42; border: 1px solid #26374E; color: #EAF1F8; border-radius: 8px; padding: 5px 0; font-size: 12px; cursor: pointer; }
+.tally-sevs button.on { background: #FF9645; border-color: #FF9645; color: #23140A; font-weight: 700; }
+.tally-grab { display: flex; align-items: center; gap: 4px; width: 100%; background: #16293F; border: 1px solid #26374E; color: #9FB3C8; border-radius: 10px; padding: 9px 10px; font-size: 12px; cursor: pointer; text-align: left; }
+.tally-grab b { color: #EAF1F8; }
+.tally-grab span { margin-left: auto; color: #4CC3F0; font-size: 11px; }
+.tally-grab.warn { border-color: #FF9645; color: #FFB870; font-weight: 700; }
+.tally-warn { font-size: 11px; color: #FFB870; background: #2A1F0E; border: 1px solid #6B4A1E; border-radius: 8px; padding: 8px; line-height: 1.5; }
+.tally-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.tally-table th, .tally-table td { padding: 7px 4px; border-bottom: 1px solid #26374E; text-align: center; color: #EAF1F8; }
+.tally-table th { color: #9FB3C8; font-weight: 400; font-size: 11px; }
+.tally-table td:first-child, .tally-table th:first-child { text-align: left; }
+.tally-seq { font-size: 10px; color: #9FB3C8; letter-spacing: 1px; word-break: break-all; }
 .planned-badge { display: inline-block; font-size: 10px; font-weight: 700; color: #4CC3F0; border: 1px solid #2E5C8A; border-radius: 10px; padding: 1px 8px; margin-left: 6px; }
 </style>
 </head>
@@ -1008,6 +1061,8 @@ videoFilterTrick: "all",
 videoModalUrl: null,
 videoModalCaption: "",
 bgUpload: null,
+tally: null,
+tallyGrabOpen: false,
 };
 var pendingCharts = [];
 
@@ -1021,6 +1076,7 @@ render();
 function setDate(v) { S.date = v; }
 function hasUnsavedRecordInput() {
   if ((S.note || "").trim() !== "") return true;
+  if (S.tally && tallyJumps_(S.tally) > 0) return true;
   if (S.rows.length > 1) return true;
   return S.rows.some(function (r) {
     if ((r.success || "") !== "" || (r.fail || "") !== "" || (r.reps || "") !== "") return true;
@@ -1117,7 +1173,16 @@ return '<div class="yure-list-item' + (active ? " active" : "") + '" onclick="' 
 }).join("");
 return '<div class="yure-panel"><div class="sub-label" style="margin:0 0 2px;">ヨレの出方：該当するものをタップ（複数選択可・任意）</div>' + items + "</div>";
 }
-function cleanWobble_(r) { return rowYureCount_(r) > 0 ? (r.wobbleDetail || []).map(function (w) { return { tag: w.tag, severity: Number(w.severity) || 3 }; }) : []; }
+function cleanWobble_(r) { return rowYureCount_(r) > 0 ? (r.wobbleDetail || []).map(function (w) { var o = { tag: w.tag, severity: Number(w.severity) || 3 }; if (w.count) o.count = Number(w.count) || 0; return o; }) : []; }
+/* 1本ずつ記入した行の順番(seq)。成功・失敗・ヨレの本数が順番と合っているときだけ保存する
+   (あとから本数を手で直したら、順番は保存しない)。 */
+function seqForSave_(r) {
+if (!r.seq || !r.seq.length) return [];
+var c = { s: 0, f: 0, y: 0 };
+r.seq.forEach(function (j) { c[j.r] = (c[j.r] || 0) + 1; });
+if (c.s !== (Number(r.success) || 0) || c.f !== (Number(r.fail) || 0) || c.y !== rowYureCount_(r)) return [];
+return r.seq.map(function (j) { var o = { r: j.r }; if (j.r === "y" && j.w && j.w.length) o.w = j.w.map(function (w) { return { tag: w.tag, severity: Number(w.severity) || 3 }; }); return o; });
+}
 
 /* ---- 予定メニュー ---- */
 function planFor(athleteId) { return PLANS[athleteId] || null; }
@@ -1157,6 +1222,7 @@ var no = planSessionNo(plan, S.athlete, S.date);
 var pp = planPhase(plan, no);
 if (!pp || !pp.items) return '<div class="plan-card"><div class="plan-title">予定メニュー</div><div class="plan-sub">' + no + '回目：予定メニューの期間は終わりました。</div></div>';
 var total = pp.items.reduce(function (s, it) { return s + it.count; }, 0);
+var stored = tallyStoredFor_(S.athlete, S.date);
 var rows = pp.items.map(function (it, i) {
 var sp = SPEED_LEVELS.filter(function (x) { return x.key === it.speed; })[0];
 return '<div class="plan-item"><span class="no">' + (i + 1) + '</span><span class="nm">' + escHtml(planItemLabel(it)) + (it.rule ? '<span class="rule">' + escHtml(it.rule) + '</span>' : '') + '</span><span class="ct">' + it.count + '本<span class="sp">' + (sp ? escHtml(sp.label + (sp.hint ? "・" + sp.hint : "")) : "") + '</span></span></div>';
@@ -1167,8 +1233,12 @@ return '<div class="plan-card">' +
 (pp.phase.note ? '<div class="plan-sub">' + escHtml(pp.phase.note) + '</div>' : '') +
 rows +
 '<div class="plan-sub">合計 ' + total + '本</div>' +
-'<button class="plan-btn" onclick="applyPlan()">この予定を技ログに入れる</button>' +
-'<div class="plan-note">入れたあとは、各技の「成功」と「ヨレ」の本数だけ入れれば、失敗は残りの本数で自動で入ります。本数や技が変わったら、そのまま直してください。</div>' +
+(stored
+? '<button class="plan-btn" onclick="startTally()">続きから記入する（' + tallyJumps_(stored) + '本 記入ずみ）</button>' +
+'<button class="plan-btn sub" onclick="startTally(true)">最初からやり直す</button>'
+: '<button class="plan-btn" onclick="startTally()">1本ずつ記入をはじめる</button>' +
+'<div class="plan-note">1本飛ぶごとに「成功」「失敗」「ヨレ」を1回押すだけ。終わったら技ログにまとめて入ります。</div>' +
+'<button class="plan-btn sub" onclick="applyPlan()">まとめて技ログに入れる（あとから本数を入れるとき）</button>') +
 '</div>';
 }
 function applyPlan() {
@@ -1189,6 +1259,214 @@ r.planRule = it.rule || "";
 return r;
 });
 render();
+}
+
+/* ---- 1本ずつ記入(予定メニュー) 2026-10 Van ----
+   予定メニューを1本ずつ出し、飛ぶたびに 成功／失敗／ヨレ を1タップ。技の本数が終わったら
+   「次の技へ」。最後に技ログ(成功◯・失敗◯・ヨレ◯)へまとめて入れ、いつもどおり保存する。
+   1本ごとの順番は行の seq [{r:"s"|"f"|"y", w:[{tag,severity}]}] として保存する。
+   途中経過はこの端末に保持するので、画面を閉じたり読み込み直しても続きから再開できる。 */
+var TALLY_KEY = "micAirTally_v1";
+function tallyStoreGet_() { try { var t = JSON.parse(localStorage.getItem(TALLY_KEY) || "null"); return (t && t.athlete && t.date && t.items) ? t : null; } catch (e) { return null; } }
+function tallyStoreSet_(t) { try { if (t) localStorage.setItem(TALLY_KEY, JSON.stringify(t)); else localStorage.removeItem(TALLY_KEY); } catch (e) {} }
+function tallyStoredFor_(athlete, date) { var t = tallyStoreGet_(); return (t && t.athlete === athlete && t.date === date) ? t : null; }
+function tallyJumps_(t) { return t.items.reduce(function (n, it) { return n + it.seq.length; }, 0); }
+function tallyActive_() { return !!(S.tally && S.tally.athlete === S.athlete && S.tally.date === S.date && S.category === "water"); }
+function tallySave_() { if (S.tally) tallyStoreSet_(S.tally); }
+function tallyTop_() { try { var el = document.querySelector(".tally"); if (el) window.scrollTo(0, Math.max(0, el.getBoundingClientRect().top + window.pageYOffset - 8)); } catch (e) {} }
+function tallyRender_() { render(); try { var c = document.querySelector(".tally-step.cur"); if (c && c.parentNode) c.parentNode.scrollLeft = Math.max(0, c.offsetLeft - c.parentNode.offsetLeft - 8); } catch (e) {} }
+function startTally(fresh) {
+var stored = tallyStoredFor_(S.athlete, S.date);
+if (stored && !fresh) { S.tally = stored; tallyRender_(); tallyTop_(); return; }
+if (stored && fresh && tallyJumps_(stored) > 0 && !confirm("いまの記入(" + tallyJumps_(stored) + "本)を消して、最初からやり直しますか？")) return;
+var plan = planFor(S.athlete); if (!plan) return;
+var pp = planPhase(plan, planSessionNo(plan, S.athlete, S.date));
+if (!pp || !pp.items) return;
+S.tally = { athlete: S.athlete, date: S.date, cur: 0, items: pp.items.map(function (it) {
+var o = { trickId: it.trickId, grab: it.grab || "", name: planItemLabel(it), count: it.count, speed: it.speed || "", rule: it.rule || "", seq: [] };
+if (it.grab === true) { var lg = tallyLastGrab_(S.athlete, it.trickId); o.grabType = lg ? lg.grabType : null; o.near = lg ? (lg.near || null) : null; o.grabFromLast = !!lg; }
+return o;
+}) };
+tallySave_(); tallyRender_(); tallyTop_();
+}
+// その選手が同じ技で最後に使ったグラブ(前回と同じなら選び直さなくてよいように)。
+function tallyLastGrab_(athlete, trickId) {
+var best = null;
+DATA.forEach(function (e) {
+if (e.athlete !== athlete || e.category !== "water") return;
+(e.rows || []).forEach(function (r) {
+if (r.trickId === trickId && r.grabType && GRAB_INDEX[r.grabType] && (!best || e.date >= best.date)) best = { date: e.date, grabType: r.grabType, near: r.near || null };
+});
+});
+return best;
+}
+function tallyOpenGrab() { S.tallyGrabOpen = true; render(); }
+function tallyCloseGrab() { S.tallyGrabOpen = false; render(); }
+function tallySetGrab(idx, id) { var it = S.tally && S.tally.items[idx]; if (!it) return; it.grabType = id; it.grabFromLast = false; if (id === "other") it.near = null; tallySave_(); tallyRender_(); }
+function tallySetNear(idx, v) { var it = S.tally && S.tally.items[idx]; if (!it) return; it.near = (it.near === v ? null : v); it.grabFromLast = false; tallySave_(); tallyRender_(); }
+function renderTallyGrabModal() {
+var open = !!(S.tallyGrabOpen && S.tally && tallyActive_() && S.tally.cur < S.tally.items.length && S.tally.items[S.tally.cur].grab === true);
+var it = open ? S.tally.items[S.tally.cur] : null;
+return renderGrabModalFor(open, open ? { grabCategory: "grab", grabType: it.grabType, near: it.near } : null, open ? S.tally.cur : 0, "tallySetGrab", "tallySetNear", "tallyCloseGrab");
+}
+function tallyGrabLabel_(it) {
+var g = it.grabType ? GRAB_INDEX[it.grabType] : null;
+if (!g) return "";
+return g.label + (it.near === "near" ? "・ニア" : it.near === "regular" ? "・レギュラー" : "");
+}
+function tallyCurItem_() { var t = S.tally; return (t && t.cur < t.items.length) ? t.items[t.cur] : null; }
+function tallyMark(r) {
+var it = tallyCurItem_(); if (!it || it.seq.length >= it.count) return;
+it.seq.push(r === "y" ? { r: "y", w: [] } : { r: r });
+tallySave_(); tallyRender_();
+}
+function tallyUndo() {
+var t = S.tally; if (!t) return;
+var it = tallyCurItem_();
+if (it && it.seq.length) { it.seq.pop(); }
+else {
+var i = Math.min(t.cur, t.items.length) - 1;
+while (i >= 0 && !t.items[i].seq.length) i--;
+if (i < 0) return;
+t.cur = i; t.items[i].seq.pop();
+}
+tallySave_(); tallyRender_();
+}
+function tallyNext() { var t = S.tally; if (!t) return; t.cur = Math.min(t.cur + 1, t.items.length); tallySave_(); tallyRender_(); tallyTop_(); }
+function tallyGo(i) { var t = S.tally; if (!t) return; t.cur = i; tallySave_(); tallyRender_(); }
+function tallyExtra() { var it = tallyCurItem_(); if (!it) return; it.count += 1; tallySave_(); tallyRender_(); }
+function tallyLastYure_() { var it = tallyCurItem_(); if (!it || !it.seq.length) return null; var j = it.seq[it.seq.length - 1]; return j.r === "y" ? j : null; }
+function tallyToggleTag(tag) {
+var j = tallyLastYure_(); if (!j) return;
+j.w = j.w || [];
+var i = j.w.findIndex(function (w) { return w.tag === tag; });
+if (i >= 0) j.w.splice(i, 1); else j.w.push({ tag: tag, severity: 3 });
+tallySave_(); tallyRender_();
+}
+function tallySev(tag, n) {
+var j = tallyLastYure_(); if (!j) return;
+var w = (j.w || []).filter(function (x) { return x.tag === tag; })[0];
+if (w) { w.severity = n; tallySave_(); tallyRender_(); }
+}
+function tallyClose() { S.tally = null; render(); }
+function tallyDiscard() {
+if (!confirm("1本ずつの記入を消しますか？（技ログに入れていない分は元に戻せません）")) return;
+tallyStoreSet_(null); S.tally = null; render();
+}
+function tallyCounts_(it) {
+var c = { s: 0, f: 0, y: 0 };
+it.seq.forEach(function (j) { c[j.r] = (c[j.r] || 0) + 1; });
+return c;
+}
+function tallyToRows_(t) {
+return t.items.filter(function (it) { return it.seq.length > 0; }).map(function (it) {
+var r = emptyTechRow("water");
+r.trickId = it.trickId;
+if (it.grab === "position") { r.grabCategory = "position"; }
+else if (it.grab) { r.grabCategory = "grab"; r.grabType = it.grabType || null; r.near = it.grabType && it.grabType !== "other" ? (it.near || null) : null; }
+r.modifier = deriveModifier(r.grabCategory, r.grabType);
+r.speedLevel = it.speed || "";
+r.plannedTotal = it.count;
+r.planRule = it.rule || "";
+var c = tallyCounts_(it), wmap = {};
+it.seq.forEach(function (j) {
+(j.r === "y" ? (j.w || []) : []).forEach(function (w) {
+var m = wmap[w.tag] || (wmap[w.tag] = { tag: w.tag, severity: 0, count: 0 });
+m.count += 1; m.severity = Math.max(m.severity, Number(w.severity) || 3);
+});
+});
+r.success = String(c.s); r.fail = String(c.f); r.yure = c.y ? String(c.y) : "";
+r.wobbleDetail = WOBBLE_TAGS.filter(function (tag) { return wmap[tag]; }).map(function (tag) { return wmap[tag]; });
+r._failManual = true;
+r.fromTally = true;
+r.seq = it.seq.map(function (j) { return JSON.parse(JSON.stringify(j)); });
+return r;
+});
+}
+function tallyFinish() {
+var t = S.tally; if (!t) return;
+var rows = tallyToRows_(t);
+if (!rows.length) { alert("まだ1本も記入していません。"); return; }
+// 手で入れた行(入力あり)は残し、前に1本ずつから入れた行と空の行は置きかえる。
+var keep = S.rows.filter(function (r) { return !r.fromTally && (r.success !== "" || r.fail !== "" || rowYureCount_(r) > 0); });
+S.rows = keep.concat(rows);
+S.tally = null;
+render();
+setTimeout(function () { var el = document.getElementById("techlog-anchor"); if (el && el.scrollIntoView) el.scrollIntoView({ block: "start" }); }, 30);
+}
+function tallyDotHtml_(it) {
+var out = "";
+for (var i = 0; i < it.count; i++) {
+var j = it.seq[i];
+if (j) out += '<span class="tally-dot ' + j.r + '">' + (j.r === "s" ? "○" : j.r === "f" ? "×" : "ヨ") + "</span>";
+else out += '<span class="tally-dot' + (i === it.seq.length ? " next" : "") + '"></span>';
+}
+return '<div class="tally-dots">' + out + "</div>";
+}
+function tallySumHtml_(c) {
+return '<div class="tally-sum">成功 <span class="s">' + c.s + '</span>・失敗 <span class="f">' + c.f + '</span>・ヨレ <span class="y">' + c.y + "</span></div>";
+}
+function renderTallyHtml() {
+var t = S.tally;
+var dt = t.date.split("-");
+var head = '<div class="tally-top"><span><b>' + escHtml(athleteName(t.athlete)) + "</b>・" + Number(dt[1]) + "/" + Number(dt[2]) + (S.kicker ? "・" + escHtml(S.kicker) : "") + '</span><button class="tally-link" onclick="tallyClose()">閉じる（続きはあとで）</button></div>';
+var steps = '<div class="tally-steps">' + t.items.map(function (it, i) {
+var done = it.seq.length >= it.count;
+return '<button class="tally-step' + (i === t.cur ? " cur" : "") + (done ? " done" : "") + '" onclick="tallyGo(' + i + ')"><b>' + (i + 1) + " " + escHtml(it.name) + "</b>" + it.seq.length + "/" + it.count + "</button>";
+}).join("") + '<button class="tally-step' + (t.cur >= t.items.length ? " cur" : "") + '" onclick="tallyGo(' + t.items.length + ')"><b>まとめ</b>' + tallyJumps_(t) + "本</button></div>";
+var totalJumps = tallyJumps_(t);
+if (t.cur >= t.items.length) {
+var rowsHtml = t.items.map(function (it) {
+var c = tallyCounts_(it);
+var gl = it.grab === true ? (it.grabType ? "（" + tallyGrabLabel_(it) + "）" : "（グラブ未選択）") : "";
+var seqTxt = it.seq.map(function (j) { return j.r === "s" ? "○" : j.r === "f" ? "×" : "ヨ"; }).join("");
+return "<tr><td>" + escHtml(it.name + gl) + (seqTxt ? '<div class="tally-seq">' + seqTxt + "</div>" : "") + "</td><td>" + it.seq.length + "/" + it.count + "</td><td>" + c.s + "</td><td>" + c.f + "</td><td>" + c.y + "</td></tr>";
+}).join("");
+return '<div class="section tally">' + head + steps +
+'<div class="tally-card"><div class="tally-name">今日のまとめ</div>' +
+'<table class="tally-table"><tr><th>技</th><th>本数</th><th>成功</th><th>失敗</th><th>ヨレ</th></tr>' + rowsHtml + "</table>" +
+(t.items.some(function (it) { return it.grab === true && it.seq.length && !it.grabType; }) ? '<div class="tally-warn">グラブの種類が選ばれていない技があります。上の技名をタップして選ぶか、技ログで選んでください。</div>' : "") +
+'<button class="tally-btn next" onclick="tallyFinish()"' + (totalJumps ? "" : " disabled") + ">技ログに入れる</button>" +
+'<div class="plan-note">技ログに入れたあと、メモを書いて「記録を保存」を押してください。</div>' +
+'<div class="tally-sub-btns"><button onclick="tallyUndo()"' + (totalJumps ? "" : " disabled") + '>↶ 1本戻す</button><button onclick="tallyDiscard()">記入を消す</button></div>' +
+"</div></div>";
+}
+var it = t.items[t.cur];
+var sp = SPEED_LEVELS.filter(function (x) { return x.key === it.speed; })[0];
+var c = tallyCounts_(it);
+var done = it.seq.length >= it.count;
+var isLast = t.cur === t.items.length - 1;
+var yj = tallyLastYure_();
+var yureHtml = "";
+if (yj) {
+var tags = WOBBLE_TAGS.map(function (tag) {
+var on = (yj.w || []).some(function (w) { return w.tag === tag; });
+return '<button class="tally-tag' + (on ? " on" : "") + '" onclick="tallyToggleTag(\'' + tag + "')\">" + escHtml(tag) + "</button>";
+}).join("");
+var sevs = (yj.w || []).map(function (w) {
+return '<div class="tally-sevs"><span>' + escHtml(w.tag) + "の強さ</span>" + [1, 2, 3, 4, 5].map(function (n) {
+return '<button class="' + (w.severity === n ? "on" : "") + '" onclick="tallySev(\'' + w.tag + "'," + n + ')">' + n + "</button>";
+}).join("") + "</div>";
+}).join("");
+yureHtml = '<div class="tally-yure"><div class="tally-yure-title">' + it.seq.length + "本目のヨレ：どうヨレた？（任意・複数可）</div>" +
+'<div class="tally-tags">' + tags + "</div>" + sevs + "</div>";
+}
+var main = done
+? '<div class="tally-count done">' + it.seq.length + "本 終わり</div>"
+: '<div class="tally-count"><b>' + (it.seq.length + 1) + "</b>本目 / " + it.count + "本</div>";
+var btns = done
+? '<div class="tally-btns"><button class="tally-btn next" onclick="tallyNext()">' + (isLast ? "まとめを見る ▶" : "次の技へ ▶") + "</button></div>"
+: '<div class="tally-btns"><button class="tally-btn s" onclick="tallyMark(\'s\')">成功</button><button class="tally-btn f" onclick="tallyMark(\'f\')">失敗</button><button class="tally-btn y" onclick="tallyMark(\'y\')">ヨレ</button></div>';
+var subs = '<div class="tally-sub-btns"><button onclick="tallyUndo()"' + (totalJumps ? "" : " disabled") + ">↶ 1本戻す</button>" +
+(done ? '<button onclick="tallyExtra()">＋もう1本</button>' : '<button onclick="tallyNext()">' + (isLast ? "ここで終えてまとめへ" : "この技はここまで ▶") + "</button>") + "</div>";
+return '<div class="section tally">' + head + steps +
+'<div class="tally-card">' +
+'<div><div class="tally-name">' + escHtml(it.name) + '</div><div class="tally-meta">' + (sp ? "スピード：" + escHtml(sp.label + (sp.hint ? "（" + sp.hint + "）" : "")) : "") + (it.rule ? '<span class="rule">' + escHtml(it.rule) + "</span>" : "") + "</div></div>" +
+(it.grab === true ? (it.grabType
+? '<button class="tally-grab" onclick="tallyOpenGrab()">グラブ：<b>' + escHtml(tallyGrabLabel_(it)) + '</b>' + (it.grabFromLast ? '（前回と同じ）' : '') + '<span>変更</span></button>'
+: '<button class="tally-grab warn" onclick="tallyOpenGrab()">グラブの種類を選ぶ（未選択）<span>選ぶ</span></button>') : "") +
+main + tallyDotHtml_(it) + tallySumHtml_(c) + btns + yureHtml + subs +
+"</div></div>";
 }
 
 function setRowField(idx, field, v) {
@@ -1235,7 +1513,7 @@ return { rowId: r.rowId, note: r.note, trickId: r.trickId, trickLabel: trickLabe
 });
 } else {
 validRows = S.rows.filter(function (r) { return ((r.success !== "" && Number(r.success) >= 0) || (r.fail !== "" && Number(r.fail) >= 0) || rowYureCount_(r) > 0); }).map(function (r) {
-return { rowId: r.rowId, note: r.note, trickId: r.trickId, trickLabel: trickLabel(r.trickId), grabType: r.grabCategory === "grab" ? (r.grabType || "") : "", near: r.near || "", modifier: r.modifier, nuki: !!r.nuki, unnatural: !!r.unnatural, kakari: !!r.kakari, success: Number(r.success) || 0, fail: Number(r.fail) || 0, yure: rowYureCount_(r), wobbleDetail: cleanWobble_(r), speedLevel: r.speedLevel || "", _videoFiles: [{ type: "success", items: (r.successVideos || []).filter(function (v) { return v.file; }) }, { type: "fail", items: (r.failVideos || []).filter(function (v) { return v.file; }) }] };
+return { rowId: r.rowId, note: r.note, trickId: r.trickId, trickLabel: trickLabel(r.trickId), grabType: r.grabCategory === "grab" ? (r.grabType || "") : "", near: r.near || "", modifier: r.modifier, nuki: !!r.nuki, unnatural: !!r.unnatural, kakari: !!r.kakari, success: Number(r.success) || 0, fail: Number(r.fail) || 0, yure: rowYureCount_(r), wobbleDetail: cleanWobble_(r), seq: seqForSave_(r), speedLevel: r.speedLevel || "", _videoFiles: [{ type: "success", items: (r.successVideos || []).filter(function (v) { return v.file; }) }, { type: "fail", items: (r.failVideos || []).filter(function (v) { return v.file; }) }] };
 });
 }
 if (validRows.length === 0) return;
@@ -1251,7 +1529,7 @@ var athleteId = S.athlete;
 var category = S.category;
 // アップロードキューに載せる動画は保存後に実行するので、送信payloadからは除いておく。
 var rowsForServer = validRows.map(function (r) {
-return { rowId: r.rowId, trickId: r.trickId, trickLabel: r.trickLabel, grabType: r.grabType || "", near: r.near || "", modifier: r.modifier, nuki: r.nuki, unnatural: r.unnatural, success: r.success, fail: r.fail, reps: r.reps, kakari: r.kakari, airtimeSeconds: r.airtimeSeconds, speedLevel: r.speedLevel, yure: r.yure, wobbleDetail: r.wobbleDetail, note: (r.note || "").trim(), shareNote: r.shareNote };
+return { rowId: r.rowId, trickId: r.trickId, trickLabel: r.trickLabel, grabType: r.grabType || "", near: r.near || "", modifier: r.modifier, nuki: r.nuki, unnatural: r.unnatural, success: r.success, fail: r.fail, reps: r.reps, kakari: r.kakari, airtimeSeconds: r.airtimeSeconds, speedLevel: r.speedLevel, yure: r.yure, wobbleDetail: r.wobbleDetail, seq: r.seq, note: (r.note || "").trim(), shareNote: r.shareNote };
 });
 // 同じ選手・種類・日付の記録がすでにあれば、サーバー側で既存の記録にまとめられる(合算)。
 var payload = {
@@ -1270,6 +1548,7 @@ if (result.status !== "ok") { throw new Error(result.message || "保存に失敗
 return refreshData().then(function () { return result; });
 }).then(function (result) {
 touchRecentAthlete(S.athlete);
+if (validRows.some(function (r) { return r.seq && r.seq.length; })) { var ts = tallyStoreGet_(); if (ts && ts.athlete === athleteId && ts.date === S.date) tallyStoreSet_(null); }
 S.saving = false;
 S.rows = [emptyTechRow(S.category)];
 S.note = "";
@@ -1442,6 +1721,7 @@ renderGrabPickerHtml(idx, row, "setRowGrab", "setRowNear", "openGrabModal") +
 '<div class="inline-row">' + countFields + "</div>" +
 (S.category === "trampoline" ? "" : renderYurePanelHtml(idx, row, "toggleRowWobbleTag", "setRowWobbleSeverity")) +
 (row.plannedTotal ? '<div class="sub-label" style="color:#4CC3F0;">予定 ' + row.plannedTotal + '本' + (row.planRule ? '：' + escHtml(row.planRule) : '') + '</div>' : '') +
+(row.seq && row.seq.length ? '<div class="sub-label">順番：<span class="tally-seq">' + row.seq.map(function (j) { return j.r === "s" ? "○" : j.r === "f" ? "×" : "ヨ"; }).join("") + '</span>' + (seqForSave_(row).length ? '' : '<span style="color:#FFB870;">（本数を直したので順番は保存しません）</span>') + '</div>' : '') +
 (S.category === "trampoline" ? "" : renderSpeedSelectHtml(idx, row, "setRowSpeed")) +
 (S.category === "trampoline"
 ? '<div class="video-row single">' + renderVideoSlot(idx, "single", "動画(任意)") + "</div>"
@@ -1466,6 +1746,7 @@ escHtml(scopedAthleteName()) + 'さんの記録は<b>NTエアlog</b>で入力し
 if (scopeBroken()) {
 return '<div class="section"><div class="empty-card" style="border-color:' + COLORS.amber + ';color:' + COLORS.amber + ';">このリンクに対応する選手が名簿に見つかりませんでした。<br>記録の入力はできません。コーチに新しいリンクをもらってください。<br><span style="opacity:.8;font-size:11px;">(ダッシュボードは今までどおり見られます)</span></div></div>';
 }
+if (tallyActive_()) return renderTallyHtml();
 var athleteSection;
 if (!hasAthletes()) {
 athleteSection = '<div class="sub-label">選手が登録されていません。まず選手名を追加してください。</div>' + renderAddAthleteForm("record");
@@ -1516,7 +1797,7 @@ return (
 : ""
 ) +
 renderPlanCardHtml() +
-'<div><label class="field-label">技ログ</label><div class="tech-row-list">' + rowsHtml + "</div>" +
+'<div id="techlog-anchor"><label class="field-label">技ログ' + (S.rows.some(function (r) { return r.fromTally; }) ? '<span class="planned-badge">1本ずつ記入から</span>' : '') + '</label><div class="tech-row-list">' + rowsHtml + "</div>" +
 '<button class="add-row-btn" onclick="addTechRow()">' + iconPlus(14, COLORS.ice) + " 技を追加</button></div>" +
 '<div><label class="field-label">メモ(任意)</label><textarea class="note-textarea" rows="2" placeholder="感覚、風向き、恐怖心など" oninput="setNote(this.value)">' + escHtml(S.note) + '</textarea>' + renderShareToggleHtml() + '</div>' +
 (S.shareConfirm ? renderShareConfirmHtml() : "") +
@@ -2377,7 +2658,8 @@ fail: r.fail,
 reps: r.reps,
 kakari: !!r.kakari,
 yure: r.yure ? String(r.yure) : "",
-wobbleDetail: (r.wobbleDetail || []).map(function (w) { return { tag: w.tag, severity: Number(w.severity) || 3 }; }),
+wobbleDetail: (r.wobbleDetail || []).map(function (w) { var o = { tag: w.tag, severity: Number(w.severity) || 3 }; if (w.count) o.count = Number(w.count) || 0; return o; }),
+seq: Array.isArray(r.seq) ? r.seq : [],
 speedLevel: r.speedLevel || "",
 note: r.note || "",
 };
@@ -2418,7 +2700,7 @@ return { rowId: r.rowId || genRowId(), trickId: r.trickId, trickLabel: trickLabe
 });
 } else {
 validRows = S.editDraft.rows.filter(function (r) { return ((r.success !== "" && r.success !== undefined && Number(r.success) >= 0) || (r.fail !== "" && r.fail !== undefined && Number(r.fail) >= 0) || rowYureCount_(r) > 0); }).map(function (r) {
-return { rowId: r.rowId || genRowId(), trickId: r.trickId, trickLabel: trickLabel(r.trickId), grabType: r.grabCategory === "grab" ? (r.grabType || "") : "", near: r.near || "", modifier: r.modifier, nuki: !!r.nuki, unnatural: !!r.unnatural, kakari: !!r.kakari, success: Number(r.success) || 0, fail: Number(r.fail) || 0, yure: rowYureCount_(r), wobbleDetail: cleanWobble_(r), speedLevel: r.speedLevel || "", note: (r.note || "").trim() };
+return { rowId: r.rowId || genRowId(), trickId: r.trickId, trickLabel: trickLabel(r.trickId), grabType: r.grabCategory === "grab" ? (r.grabType || "") : "", near: r.near || "", modifier: r.modifier, nuki: !!r.nuki, unnatural: !!r.unnatural, kakari: !!r.kakari, success: Number(r.success) || 0, fail: Number(r.fail) || 0, yure: rowYureCount_(r), wobbleDetail: cleanWobble_(r), seq: seqForSave_(r), speedLevel: r.speedLevel || "", note: (r.note || "").trim() };
 });
 }
 if (validRows.length === 0) return;
@@ -2684,7 +2966,7 @@ renderHeader() +
 renderTabs() +
 (S.tab === "record" ? renderRecordTab() : renderDashboardTab()) +
 "</div></div>" +
-renderVideoModal() + renderGrabModal() + renderEditGrabModal();
+renderVideoModal() + renderGrabModal() + renderEditGrabModal() + renderTallyGrabModal();
 wireCharts();
 }
 function renderLoading() {
