@@ -850,6 +850,30 @@ var PLANS = {
         { trickId: "inv_bf", name: "フル", count: 15, speed: "slow", rule: "", start: "1エアの位置" }
       ]
     }
+  },
+  /* 2026-10 鈴木佳英(Van 2026-10-03)：右に飛ぶ癖を直す。ヨレは全部の技で記入(「右に飛んだ」を使う)。
+     4〜7はVan指定：パイクバック最大2・バックフリップ(トラックドライバー)8＝1エアの位置／タックバック最大2・クロスバック8＝2エアの位置。
+     グラブの種類は予定で固定できないため、ルールに「トラックドライバーを選ぶ」と書いている(佳英は過去にグラブの記録が無く、初回は未選択から)。
+     回数の合計は未定のため、確認日はまだ置いていない。 */
+  "a634d80a6": {
+    name: "鈴木佳英",
+    from: "2026-10-04",
+    category: "water",
+    phases: [
+      { from: 1, to: 3, label: "傾向をつかむ", items: "TREND" },
+      { from: 4, to: 99, label: "修正する", items: null, pendingNote: "4回目からのメニューは、3回目までの記録を見てコーチが決めます。決まるまでは1〜3回目と同じメニューです。" }
+    ],
+    menus: {
+      TREND: [
+        { trickId: "straight_jump", name: "ストレート", count: 3, speed: "normal", rule: "まっすぐ着水。左膝を内側に入れない" },
+        { trickId: "rot_3", name: "360", count: 10, speed: "normal", rule: "踏み切りを早くしない。後ろでスタート位置を見る" },
+        { trickId: "straight_jump", name: "ストレート", count: 2, speed: "normal", rule: "台の確認" },
+        { trickId: "inv_bp", name: "パイクバック", count: 2, speed: "slow", rule: "最大2本。立てたら次の技へ", start: "1エアの位置" },
+        { trickId: "inv_bc", grab: true, name: "バックフリップ（トラックドライバー）", count: 8, speed: "slow", rule: "グラブは「トラックドライバー」を選ぶ。真後ろに回る", start: "1エアの位置" },
+        { trickId: "inv_bt", name: "タックバック", count: 2, speed: "fast", rule: "最大2本。立てたら次の技へ", start: "2エアの位置" },
+        { trickId: "inv_bc", grab: "position", name: "クロスバック", count: 8, speed: "fast", rule: "真後ろに回る", start: "2エアの位置" }
+      ]
+    }
   }
 };
 var SPEED_LEVELS = [
