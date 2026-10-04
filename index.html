@@ -122,6 +122,32 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.7); cur
 .chart-title { display: flex; align-items: center; gap: 6px; margin-bottom: 12px; font-size: 12px; color: #5C7086; }
 .legend-row { display: flex; gap: 16px; margin-top: 8px; font-size: 11px; }
 
+.yx-note { font-size: 11px; color: #9FB3C8; line-height: 1.5; margin-bottom: 8px; }
+.yx-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.yx-chips .chip-btn { font-size: 11px; padding: 6px 10px; }
+.yx-sub { font-size: 12px; font-weight: 700; color: #C7D6E5; margin: 12px 0 6px; }
+.yx-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.yx-table { border-collapse: collapse; font-size: 11px; min-width: 100%; }
+.yx-table th, .yx-table td { padding: 6px 5px; border-bottom: 1px solid #26374E; text-align: center; color: #EAF1F8; white-space: nowrap; }
+.yx-table th { color: #9FB3C8; font-weight: 400; font-size: 10px; }
+.yx-table td.l, .yx-table th.l { text-align: left; position: sticky; left: 0; background: #131F30; }
+.yx-table .ok { color: #7CD98A; font-weight: 700; }
+.yx-table .yy { color: #FF9645; font-weight: 700; }
+.yx-cell { display: inline-block; min-width: 38px; padding: 3px 4px; border-radius: 6px; font-weight: 700; }
+.yx-cell small { display: block; font-size: 9px; font-weight: 400; opacity: .85; }
+.yx-sevbar { display: flex; height: 10px; width: 90px; border-radius: 3px; overflow: hidden; background: #0F1929; margin: 0 auto; }
+.yx-sevbar span { display: block; height: 100%; }
+.yx-legend { display: flex; gap: 8px; flex-wrap: wrap; font-size: 10px; color: #9FB3C8; margin-top: 6px; align-items: center; }
+.yx-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 3px; vertical-align: -1px; }
+.yx-jumps { display: flex; flex-direction: column; gap: 4px; }
+.yx-jump { display: grid; grid-template-columns: 44px 1fr; gap: 6px; align-items: start; font-size: 11px; padding: 5px 6px; border-radius: 6px; background: #0F1929; }
+.yx-jump .no { color: #9FB3C8; }
+.yx-jump .ok { color: #7CD98A; font-weight: 700; }
+.yx-jump .ng { color: #E5484D; font-weight: 700; }
+.yx-tag { display: inline-block; margin: 0 4px 3px 0; padding: 2px 6px; border-radius: 10px; font-size: 10px; font-weight: 700; color: #23140A; }
+.yx-half { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 8px; }
+.yx-half > div { background: #0F1929; border-radius: 8px; padding: 6px 8px; font-size: 11px; color: #C7D6E5; line-height: 1.6; }
+.yx-half b { display: block; color: #9FB3C8; font-size: 10px; font-weight: 400; }
 .rank-list { display: flex; flex-direction: column; gap: 8px; }
 .rank-item { display: flex; align-items: center; gap: 10px; }
 .rank-name { font-size: 12px; width: 108px; flex-shrink: 0; color: #EAF1F8; }
@@ -1106,6 +1132,8 @@ videoModalUrl: null,
 videoModalCaption: "",
 bgUpload: null,
 tally: null,
+dashYureTrick: "",
+dashYureDate: "",
 tallyGrabOpen: false,
 };
 var pendingCharts = [];
@@ -2460,11 +2488,132 @@ renderTrendChartHtml("chart-total", trend, 150) +
 "</div>" +
 airtimeChartCard +
 '<div class="card"><div class="recent-title">技別 累計本数' + (isWater ? "・成功率" : "") + "</div><div class=\"rank-list\">" + rankHtml + "</div></div>" +
+(isWater ? renderYureTrendCard(entries) : "") +
 overallSpeedCard +
 renderVideoGalleryCard(entries) +
 '<div><div class="recent-title">直近の記録</div><div class="recent-list">' + recentHtml + "</div>" + (recentHiddenCount > 0 ? '<button class="chip-btn" style="margin-top:8px;font-size:11px;padding:6px 10px;width:100%;" onclick="toggleDashRecentExpanded()">' + (S.dashRecentExpanded ? "閉じる" : "＋過去の記録を見る (" + recentHiddenCount + "件)") + "</button>" : "") + "</div>" +
 (isWater ? renderFacilityBreakdown(entries) : "")
 );
+}
+
+/* ---- ヨレの推移(ダッシュボード) 2026-10 Van：ヨレの段階(強さ1〜5)も傾向として比べたい ----
+   技ごとに、日別の「本数・成功(＝ヨレなし)・ヨレ・強さの内訳」と「ヨレ方(タグ)×日付」を出す。
+   1本ずつ記入(seq)がある日は1本ごとの並びと前半／後半も出す。
+   10/2(ヨレ記録の開始)より前の日は出さない。強さは「タグ1つごと」に数える(1本に2つタグがあれば2つ分)。seq が無い行は wobbleDetail の
+   強さ(1本ずつ記入の行は最大値)と count を使う。NTエアlogから合成された記録は対象外。 */
+var YX_FROM = "2026-10-02"; // ヨレを記録できるようになった日。これより前の「成功」はヨレなしの意味ではないので出さない
+var YX_SEV_COLORS = ["#FFE0B8", "#FFC27D", "#FF9645", "#F2643A", "#E5484D"];
+function yxSevColor_(v) { var i = Math.max(1, Math.min(5, Math.round(v))) - 1; return YX_SEV_COLORS[i]; }
+function yxKey_(r) { return r.trickId + "|" + (r.modifier || "none"); }
+function yxLabel_(r) { var c = composedCode(r.trickId, r.modifier); return trickLabel(r.trickId) + (c ? " (" + c + ")" : ""); }
+function yxCollect_(entries) {
+var tricks = {}, order = [];
+entries.forEach(function (e) {
+if (e._source === "nt" || e.category !== "water" || e.date < YX_FROM) return;
+(e.rows || []).forEach(function (r) {
+if (r.reps !== undefined) return;
+var k = yxKey_(r);
+if (!tricks[k]) { tricks[k] = { key: k, label: yxLabel_(r), yureTotal: 0, days: {}, dayOrder: [] }; order.push(k); }
+var t = tricks[k];
+if (!t.days[e.date]) { t.days[e.date] = { date: e.date, total: 0, success: 0, fail: 0, yure: 0, tags: {}, sev: [0, 0, 0, 0, 0], jumps: [], hasSeq: true, rows: 0 }; t.dayOrder.push(e.date); }
+var d = t.days[e.date];
+var y = Number(r.yure) || 0;
+d.rows += 1;
+d.success += Number(r.success) || 0; d.fail += Number(r.fail) || 0; d.yure += y; d.total += rowTotal(r);
+t.yureTotal += y;
+var seq = Array.isArray(r.seq) ? r.seq : [];
+if (seq.length) {
+seq.forEach(function (j) {
+d.jumps.push(j);
+if (j.r !== "y") return;
+(j.w || []).forEach(function (w) { yxAddTag_(d, w.tag, Number(w.severity) || 3, 1); });
+});
+} else {
+d.hasSeq = false;
+(r.wobbleDetail || []).forEach(function (w) { yxAddTag_(d, w.tag, Number(w.severity) || 3, Number(w.count) || 1); });
+}
+});
+});
+order.forEach(function (k) { tricks[k].dayOrder.sort(); });
+return { tricks: tricks, order: order.filter(function (k) { return tricks[k].yureTotal > 0; }) };
+}
+function yxAddTag_(d, tag, sev, n) {
+if (!d.tags[tag]) d.tags[tag] = { n: 0, sevSum: 0 };
+d.tags[tag].n += n; d.tags[tag].sevSum += sev * n;
+d.sev[Math.max(1, Math.min(5, sev)) - 1] += n;
+}
+function yxAvg_(sevArr) { var n = 0, s = 0; sevArr.forEach(function (c, i) { n += c; s += c * (i + 1); }); return n ? Math.round((s / n) * 10) / 10 : null; }
+function setDashYureTrick(k) { S.dashYureTrick = k; S.dashYureDate = ""; render(); }
+function setDashYureDate(d) { S.dashYureDate = d; render(); }
+function yxTagCountText_(tags) {
+var arr = WOBBLE_TAGS.filter(function (t) { return tags[t]; }).map(function (t) { return { t: t, n: tags[t] }; }).sort(function (a, b) { return b.n - a.n; });
+return arr.length ? arr.map(function (x) { return escHtml(x.t) + " " + x.n; }).join("・") : "なし";
+}
+function renderYureTrendCard(entries) {
+var c = yxCollect_(entries);
+if (!c.order.length) return "";
+var key = c.order.indexOf(S.dashYureTrick) >= 0 ? S.dashYureTrick : c.order.slice().sort(function (a, b) { return c.tricks[b].yureTotal - c.tricks[a].yureTotal; })[0];
+var t = c.tricks[key];
+var chips = c.order.map(function (k) {
+return '<button class="chip-btn' + (k === key ? " active" : "") + '" onclick="setDashYureTrick(\'' + k + '\')">' + escHtml(c.tricks[k].label) + " ヨレ" + c.tricks[k].yureTotal + "</button>";
+}).join("");
+var dates = t.dayOrder;
+// 1) 日別
+var dayRows = dates.map(function (dt) {
+var d = t.days[dt];
+var avg = yxAvg_(d.sev);
+var sevN = d.sev.reduce(function (a, b) { return a + b; }, 0);
+var bar = sevN ? '<div class="yx-sevbar">' + d.sev.map(function (n, i) { return n ? '<span style="width:' + (n / sevN * 100) + "%;background:" + YX_SEV_COLORS[i] + '"></span>' : ""; }).join("") + "</div>" : '<span style="color:#5C7086;">－</span>';
+return "<tr><td class=\"l\">" + escHtml(dt.slice(5).replace("-", "/")) + "</td><td>" + d.total + '</td><td class="ok">' + d.success + '</td><td class="yy">' + d.yure + "</td><td>" + d.fail + "</td><td>" + (avg !== null ? avg.toFixed(1) : "－") + "</td><td>" + bar + "</td></tr>";
+}).join("");
+var legend = '<div class="yx-legend">強さ：' + YX_SEV_COLORS.map(function (col, i) { return "<span><i style=\"background:" + col + '"></i>' + (i + 1) + "</span>"; }).join("") + "<span>（1＝少し〜5＝大きい）</span></div>";
+var table1 = '<div class="yx-scroll"><table class="yx-table"><tr><th class="l">日付</th><th>本数</th><th>成功<br>(ヨレなし)</th><th>ヨレ</th><th>失敗</th><th>強さ<br>平均</th><th>強さの内訳</th></tr>' + dayRows + "</table></div>" + legend;
+// 2) ヨレ方×日付
+var usedTags = WOBBLE_TAGS.filter(function (tag) { return dates.some(function (dt) { return t.days[dt].tags[tag]; }); });
+var head2 = '<tr><th class="l">ヨレ方</th>' + dates.map(function (dt) { return "<th>" + escHtml(dt.slice(5).replace("-", "/")) + "</th>"; }).join("") + "</tr>";
+var body2 = usedTags.map(function (tag) {
+return '<tr><td class="l">' + escHtml(tag) + "</td>" + dates.map(function (dt) {
+var x = t.days[dt].tags[tag];
+if (!x) return '<td><span style="color:#37506E;">－</span></td>';
+var avg = Math.round((x.sevSum / x.n) * 10) / 10;
+return '<td><span class="yx-cell" style="background:' + yxSevColor_(avg) + ';color:#23140A;">' + x.n + "<small>強さ " + avg.toFixed(1) + "</small></span></td>";
+}).join("") + "</tr>";
+}).join("");
+var table2 = usedTags.length ? ('<div class="yx-scroll"><table class="yx-table">' + head2 + body2 + "</table></div>") : '<div class="yx-note">ヨレ方（タグ）の記録はまだありません。</div>';
+// 3) 1本ごと(seq がある日)
+var seqDates = dates.filter(function (dt) { return t.days[dt].hasSeq && t.days[dt].jumps.length; });
+var jumpHtml = "";
+if (seqDates.length) {
+var sd = seqDates.indexOf(S.dashYureDate) >= 0 ? S.dashYureDate : seqDates[seqDates.length - 1];
+var d = t.days[sd];
+var dchips = seqDates.length > 1 ? '<div class="yx-chips">' + seqDates.map(function (dt) { return '<button class="chip-btn' + (dt === sd ? " active" : "") + '" onclick="setDashYureDate(\'' + dt + '\')">' + escHtml(dt.slice(5).replace("-", "/")) + "</button>"; }).join("") + "</div>" : "";
+var n = d.jumps.length, mid = Math.ceil(n / 2);
+var halfTags = [{}, {}], halfSev = [[0, 0, 0, 0, 0], [0, 0, 0, 0, 0]], halfOk = [0, 0];
+d.jumps.forEach(function (j, i) {
+var h = i < mid ? 0 : 1;
+if (j.r === "s") halfOk[h]++;
+(j.r === "y" ? (j.w || []) : []).forEach(function (w) { halfTags[h][w.tag] = (halfTags[h][w.tag] || 0) + 1; halfSev[h][Math.max(1, Math.min(5, Number(w.severity) || 3)) - 1]++; });
+});
+var halfHtml = '<div class="yx-half">' + [0, 1].map(function (h) {
+var avg = yxAvg_(halfSev[h]);
+return "<div><b>" + (h === 0 ? "前半（1〜" + mid + "本目）" : "後半（" + (mid + 1) + "〜" + n + "本目）") + "</b>成功 " + halfOk[h] + "本・強さ平均 " + (avg !== null ? avg.toFixed(1) : "－") + "<br>" + yxTagCountText_(halfTags[h]) + "</div>";
+}).join("") + "</div>";
+var rows = d.jumps.map(function (j, i) {
+var body;
+if (j.r === "s") body = '<span class="ok">成功（ヨレなし）</span>';
+else if (j.r === "f") body = '<span class="ng">失敗</span>';
+else body = (j.w && j.w.length) ? j.w.map(function (w) { var sv = Number(w.severity) || 3; return '<span class="yx-tag" style="background:' + yxSevColor_(sv) + '">' + escHtml(w.tag) + " " + sv + "</span>"; }).join("") : '<span style="color:#FF9645;">ヨレ（タグなし）</span>';
+return '<div class="yx-jump"><span class="no">' + (i + 1) + "本目</span><span>" + body + "</span></div>";
+}).join("");
+jumpHtml = '<div class="yx-sub">1本ごと（' + escHtml(sd.slice(5).replace("-", "/")) + "）</div>" + dchips + halfHtml + '<div class="yx-jumps">' + rows + "</div>";
+}
+return '<div class="card"><div class="recent-title">ヨレの推移（技ごと）</div>' +
+'<div class="yx-note">成功＝ヨレなし。強さはヨレ方（タグ）1つごとに数えています（1本に2つ付けば2つ分）。</div>' +
+'<div class="yx-chips">' + chips + "</div>" +
+'<div class="yx-sub">日ごと</div>' + table1 +
+'<div class="yx-sub">ヨレ方 × 日付（数字＝本数、色と小さい数字＝強さの平均）</div>' + table2 +
+jumpHtml +
+"</div>";
 }
 
 /* ---- 施設・台別の技別本数(ウォータージャンプのみ) ---- */
