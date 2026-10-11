@@ -844,10 +844,12 @@ var PLANS = {
     name: "有賀睦人",
     from: "2026-10-04",
     category: "water",
+    /* 2026-10-11 Van：2回目までの記録（10/10・10/11）を見て、3回目（10/12〜）から修正メニュー（案B）へ。
+       コーク720は改善が見えたので本数を減らし、フルの前のレイアウトとフルに回す。合計24本のまま。 */
     phases: [
-      { from: 1, to: 3, label: "傾向をつかむ", items: "TREND" },
-      { from: 4, to: 8, label: "修正する", items: null, pendingNote: "4回目からのメニューは、3回目までの記録を見てコーチが決めます。決まるまでは1〜3回目と同じメニューです。" },
-      { from: 9, to: 9, label: "確認日", items: "TREND", check: true, note: "1〜3回目と同じメニューです。直ったかどうかを同じものさしで比べます。" }
+      { from: 1, to: 2, label: "傾向をつかむ", items: "TREND" },
+      { from: 3, to: 8, label: "修正する", items: "FIX", note: "2回目までの記録を見て、コーチが組み直したメニューです。本数は予定どおりに。" },
+      { from: 9, to: 9, label: "確認日", items: "TREND", check: true, note: "1〜2回目と同じメニューです。直ったかどうかを同じものさしで比べます。" }
     ],
     menus: {
       TREND: [
@@ -856,6 +858,13 @@ var PLANS = {
         { trickId: "oax_7", grab: true, name: "コーク720＋グラブ", count: 6, speed: "fast", rule: "" },
         { trickId: "inv_bl", name: "レイアウト", count: 1, speed: "slow", rule: "フルの前の確認" },
         { trickId: "inv_bf", name: "フル", count: 5, speed: "slow", rule: "1本目は立つことを最優先" }
+      ],
+      FIX: [
+        { trickId: "inv_bc", grab: "position", name: "クロスバック", count: 2, speed: "fast", rule: "その日の調子の確認" },
+        { trickId: "oax_7", name: "コーク720", count: 6, speed: "fast", rule: "1本目から崩さない" },
+        { trickId: "oax_7", grab: true, name: "コーク720＋グラブ", count: 6, speed: "fast", rule: "グラブを取っても回し切る" },
+        { trickId: "inv_bl", name: "レイアウト", count: 2, speed: "slow", rule: "フルの前に、まっすぐ回れているか確認" },
+        { trickId: "inv_bf", name: "フル", count: 8, speed: "slow", rule: "8本で終わり。1本ずつヨレ方を記入" }
       ]
     }
   },
