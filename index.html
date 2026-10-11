@@ -895,10 +895,20 @@ var PLANS = {
     from: "2026-10-04",
     category: "water",
     phases: [
-      { from: 1, to: 3, label: "傾向をつかむ", items: "TREND" },
-      { from: 4, to: 99, label: "修正する", items: null, pendingNote: "4回目からのメニューは、3回目までの記録を見てコーチが決めます。決まるまでは1〜3回目と同じメニューです。" }
+      { from: 1, to: 2, label: "傾向をつかむ", items: "TREND" },
+      { from: 3, to: 99, label: "修正する", items: "FIX", note: "踏み切りをまっすぐにする回です。ストレートでまっすぐを作ってから、易しい順に後ろへ回ります。" }
     ],
     menus: {
+      /* 2026-10-12 Van決定(案A)：1〜2回目で後ろ系の右に飛んだ28/42・クロスは回転オーバー＋右がセット・360は右0/21で回転ショート10/21。
+         ストレートを増やして踏み切りを作り、後ろ系はタック→TD→クロスの易しい順で15本に減らす。360は回転ショートだけに絞る。 */
+      FIX: [
+        { trickId: "straight_jump", name: "ストレート", count: 5, speed: "normal", rule: "左膝を内側に入れない。まっすぐ着水を5本" },
+        { trickId: "rot_3", name: "360", count: 6, speed: "normal", rule: "後ろでスタート台を見るまで回し切る" },
+        { trickId: "straight_jump", name: "ストレート", count: 2, speed: "normal", rule: "もう一度まっすぐの確認" },
+        { trickId: "inv_bt", name: "タックバック", count: 3, speed: "slow", rule: "真上に踏み切ってから回る", start: "1エアの位置" },
+        { trickId: "inv_bc", grab: true, name: "バックフリップ（トラックドライバー）", count: 6, speed: "slow", rule: "グラブより先に、まっすぐ上へ", start: "1エアの位置" },
+        { trickId: "inv_bc", grab: "position", name: "クロスバック", count: 6, speed: "fast", rule: "台の先で体を倒さない。回し過ぎない", start: "2エアの位置" }
+      ],
       TREND: [
         { trickId: "straight_jump", name: "ストレート", count: 3, speed: "normal", rule: "まっすぐ着水。左膝を内側に入れない" },
         { trickId: "rot_3", name: "360", count: 10, speed: "normal", rule: "踏み切りを早くしない。後ろでスタート位置を見る" },
