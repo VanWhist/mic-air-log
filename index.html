@@ -713,7 +713,7 @@ return a ? a.name : id;
 }
 
 var FACILITIES = [
-{ name: "O-air", kickers: ["9番台", "その他"] },
+{ name: "O-air", kickers: ["9番台", "モーグル台", "その他"] },
 { name: "S-air", kickers: ["モーグル台", "その他"] },
 { name: "さのさか", kickers: ["7番台", "6番台", "その他"] },
 { name: "WJM", kickers: ["手前", "奥"] },
@@ -928,16 +928,30 @@ var PLANS = {
      ループ軸の判定は、その場は本人の感覚で押し、あとでコーチが動画で確認して直す(Van 10/9)。
      スピードはスタート位置で決まるため未指定。
      半捻りはメニューに入れない(入れるかは本人が決める。バックフルで記録すると選手カルテの現在地カードの10本に混ざる)。
-     グラブの種類は予定で固定できないため、ルールに書いている。回数の合計は未定のため、確認日はまだ置いていない。 */
+     グラブの種類は予定で固定できないため、ルールに書いている。回数の合計は未定のため、確認日はまだ置いていない。
+     2026-10-16 Van：3回目(10/17〜)からモーグル台(MOGUL)。1〜2回目(10/10・10/11、9番台)の傾向＝右に踏み切る癖(ループ20本すべて「右に飛んだ」)・フル0/20(捻り切れない)・レイアウト0/4。
+     流れは同じで本数を変更：ストレート2→3・ループ5→7(ループ多め)・ストレート(フル前)1→2・レイアウト2→3(立てたらフルへ)・フル10→6(質を優先)。計34本。
+     フルは「捻り切れなかったら失敗」に統一(回転ショートがヨレと失敗に分かれていたため)。モーグル台のスタート位置は未定(「コーチに確認」と出る)。 */
   "ac3be33f9": {
     name: "浜田誠真",
     from: "2026-10-10",
     category: "water",
     phases: [
-      { from: 1, to: 3, label: "傾向をつかむ", items: "TREND" },
-      { from: 4, to: 99, label: "修正する", items: null, pendingNote: "4回目からのメニューは、3回目までの記録を見てコーチが決めます。決まるまでは1〜3回目と同じメニューです。" }
+      { from: 1, to: 2, label: "傾向をつかむ", items: "TREND" },
+      { from: 3, to: 99, label: "モーグル台", items: "MOGUL", note: "9番台でやってきたことをモーグル台でやる回です。記録するときは台を「モーグル台」にしてください。まっすぐ踏み切ること、フルは最後まで捻り切ることを優先します。" }
     ],
     menus: {
+      MOGUL: [
+        { trickId: "straight_jump", name: "ストレート（ループの前）", count: 3, rule: "最大3本。右に飛ばず、まっすぐ踏み切れたら次の技へ", start: "" },
+        { trickId: "loop_l", name: "ループ", count: 7, rule: "まっすぐ踏み切ってから回る", start: "" },
+        { trickId: "loop_l", grab: true, name: "ループ（グラブ）", count: 5, rule: "グラブの種類を選ぶ", start: "" },
+        { trickId: "straight_jump", name: "ストレート（フルの前）", count: 2, rule: "フルの踏切とスタート位置の確認", start: "" },
+        { trickId: "inv_bl", name: "レイアウト", count: 3, rule: "最大3本。立てたらフルへ", start: "" },
+        { trickId: "inv_bf", name: "フル", count: 6, rule: "捻り切れなかったら失敗。ループ軸が入ったらヨレ。本数より1本の質を大事に", start: "" },
+        { trickId: "straight_jump", name: "ストレート（クロスバックの前）", count: 2, rule: "最大2本。クロスバックの踏切とスタート位置の確認", start: "" },
+        { trickId: "inv_bc", grab: "position", name: "クロスバック", count: 3, rule: "", start: "" },
+        { trickId: "inv_bc", grab: true, name: "バックミュート", count: 3, rule: "グラブは「ミュート」を選ぶ", start: "" }
+      ],
       TREND: [
         { trickId: "straight_jump", name: "ストレート（ループの前）", count: 2, rule: "最大2本。ループの踏切とスタート位置の確認", start: "第1エアの位置" },
         { trickId: "loop_l", name: "ループ", count: 5, rule: "", start: "第1エアの位置" },
