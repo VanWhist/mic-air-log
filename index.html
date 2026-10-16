@@ -931,7 +931,7 @@ var PLANS = {
      グラブの種類は予定で固定できないため、ルールに書いている。回数の合計は未定のため、確認日はまだ置いていない。
      2026-10-16 Van：3回目(10/17〜)からモーグル台(MOGUL)。1〜2回目(10/10・10/11、9番台)の傾向＝右に踏み切る癖(ループ20本すべて「右に飛んだ」)・フル0/20(捻り切れない)・レイアウト0/4。
      流れは同じで本数を変更：ストレート2→3・ループ5→7(ループ多め)・ストレート(フル前)1→2・レイアウト2→3(立てたらフルへ)・フル10→6(質を優先)。計34本。
-     フルは「捻り切れなかったら失敗」に統一(回転ショートがヨレと失敗に分かれていたため)。モーグル台のスタート位置は未定(「コーチに確認」と出る)。 */
+     フルは「捻り切れなかったら失敗」に統一(回転ショートがヨレと失敗に分かれていたため)。モーグル台のスタート位置は「コーチと確認しながら決める」(Van 10/16)。 */
   "ac3be33f9": {
     name: "浜田誠真",
     from: "2026-10-10",
@@ -942,15 +942,15 @@ var PLANS = {
     ],
     menus: {
       MOGUL: [
-        { trickId: "straight_jump", name: "ストレート（ループの前）", count: 3, rule: "最大3本。右に飛ばず、まっすぐ踏み切れたら次の技へ", start: "" },
-        { trickId: "loop_l", name: "ループ", count: 7, rule: "まっすぐ踏み切ってから回る", start: "" },
-        { trickId: "loop_l", grab: true, name: "ループ（グラブ）", count: 5, rule: "グラブの種類を選ぶ", start: "" },
-        { trickId: "straight_jump", name: "ストレート（フルの前）", count: 2, rule: "フルの踏切とスタート位置の確認", start: "" },
-        { trickId: "inv_bl", name: "レイアウト", count: 3, rule: "最大3本。立てたらフルへ", start: "" },
-        { trickId: "inv_bf", name: "フル", count: 6, rule: "捻り切れなかったら失敗。ループ軸が入ったらヨレ。本数より1本の質を大事に", start: "" },
-        { trickId: "straight_jump", name: "ストレート（クロスバックの前）", count: 2, rule: "最大2本。クロスバックの踏切とスタート位置の確認", start: "" },
-        { trickId: "inv_bc", grab: "position", name: "クロスバック", count: 3, rule: "", start: "" },
-        { trickId: "inv_bc", grab: true, name: "バックミュート", count: 3, rule: "グラブは「ミュート」を選ぶ", start: "" }
+        { trickId: "straight_jump", name: "ストレート（ループの前）", count: 3, rule: "最大3本。右に飛ばず、まっすぐ踏み切れたら次の技へ", start: "コーチと確認しながら決める" },
+        { trickId: "loop_l", name: "ループ", count: 7, rule: "まっすぐ踏み切ってから回る", start: "コーチと確認しながら決める" },
+        { trickId: "loop_l", grab: true, name: "ループ（グラブ）", count: 5, rule: "グラブの種類を選ぶ", start: "コーチと確認しながら決める" },
+        { trickId: "straight_jump", name: "ストレート（フルの前）", count: 2, rule: "フルの踏切とスタート位置の確認", start: "コーチと確認しながら決める" },
+        { trickId: "inv_bl", name: "レイアウト", count: 3, rule: "最大3本。立てたらフルへ", start: "コーチと確認しながら決める" },
+        { trickId: "inv_bf", name: "フル", count: 6, rule: "捻り切れなかったら失敗。ループ軸が入ったらヨレ。本数より1本の質を大事に", start: "コーチと確認しながら決める" },
+        { trickId: "straight_jump", name: "ストレート（クロスバックの前）", count: 2, rule: "最大2本。クロスバックの踏切とスタート位置の確認", start: "コーチと確認しながら決める" },
+        { trickId: "inv_bc", grab: "position", name: "クロスバック", count: 3, rule: "", start: "コーチと確認しながら決める" },
+        { trickId: "inv_bc", grab: true, name: "バックミュート", count: 3, rule: "グラブは「ミュート」を選ぶ", start: "コーチと確認しながら決める" }
       ],
       TREND: [
         { trickId: "straight_jump", name: "ストレート（ループの前）", count: 2, rule: "最大2本。ループの踏切とスタート位置の確認", start: "第1エアの位置" },
